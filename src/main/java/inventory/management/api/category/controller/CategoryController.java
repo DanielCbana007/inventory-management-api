@@ -1,7 +1,9 @@
 package inventory.management.api.category.controller;
 
-import inventory.management.api.category.entity.CategoryEntity;
+import inventory.management.api.category.dto.CategoryDto;
+import inventory.management.api.category.dto.CategoryRequestDto;
 import inventory.management.api.category.services.CategoryService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,10 +39,10 @@ public class CategoryController {
     // SEGURIDAD [§1.1]: @RequestBody sobre la entidad JPA = mass assignment. El
     //               cliente puede mandar "id" y escribir la clave primaria.
     // FALTA [§1.5]: sin @Valid. Un name vacío llega hasta Postgres y vuelve como 500.
-    public ResponseEntity<String> create(@RequestBody CategoryEntity category){
+    public ResponseEntity<String> create(@RequestBody @Valid CategoryRequestDto requestDto){
         // ERROR [§1.2]: try/catch disperso. El estándar pide @RestControllerAdvice.
         try {
-            this.categoryService.createCategory(category);
+            this.categoryService.createCategory(requestDto);
             return ResponseEntity.ok("Create category");
         } catch (Exception e) {
             // ERROR [§1.2]: capturas para relanzar envuelto. No recuperas, no traduces
@@ -54,7 +56,7 @@ public class CategoryController {
     // ERROR [§1.1]: devuelves la entidad JPA. Tu contrato público ES tu tabla:
     //               renombrar una columna rompe a todos los clientes.
     // MEJORA [§3.2]: sin paginación. Pregunta de entrevista: ¿y con 500k filas?
-    public List<CategoryEntity> getAll(){
+    public List<CategoryDto> getAll(){
         return this.categoryService.getAllCategories();
     }
 
@@ -63,12 +65,12 @@ public class CategoryController {
     //               PATCH (parcial). El roadmap evalúa esa distinción directamente.
     // ERROR [§1.3]: identificas el recurso por "name", que es mutable. La URL de
     //               una categoría cambia cuando la editas; un id debe ser estable.
-    @PostMapping("/update/{nameCategory}")
+    @PostMapping("/update/{id}")
     // BUG [§1.4b]: si la categoría no existe devuelve 200 OK sin haber hecho nada.
     //              Le mientes al cliente sobre el resultado.
-    public ResponseEntity<String> update(@RequestBody CategoryEntity category, @PathVariable String nameCategory){
+    public ResponseEntity<String> update(@RequestBody @Valid  CategoryRequestDto requestDto, @PathVariable long id){
         try {
-            this.categoryService.updateCategory(category, nameCategory);
+            this.categoryService.updateCategory(requestDto, id);
             return ResponseEntity.ok("Update category");
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -82,7 +84,7 @@ public class CategoryController {
     // BUG [§1.4d]: si no existe, el service revienta con 500 en vez de responder 404.
     public ResponseEntity<String> delete(@PathVariable String nameCategory){
         try {
-            this.categoryService.aleteCategory(nameCategory);
+            this.categoryService.deleteCategory(nameCategory);
             // ERROR [§1.3]: un delete sin cuerpo útil debería ser 204 No Content.
             return ResponseEntity.ok("Delete category");
         } catch (Exception e) {

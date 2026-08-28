@@ -1,13 +1,13 @@
 package inventory.management.api.exception;
 
-public class EntityAlreadyExistsException extends RuntimeException {
-    public EntityAlreadyExistsException(String message) {
+public class CusEntityAlreadyExistsException extends RuntimeException {
+    public CusEntityAlreadyExistsException(String message) {
         super(message);
     }
 
-    public static EntityAlreadyExistsException of(String entityName, Object id) {
-        return new EntityAlreadyExistsException(
-                "%s with id '%s' not found".formatted(entityName, id)
+    public static CusEntityAlreadyExistsException of(String entityName, Object value) {
+        return new CusEntityAlreadyExistsException(
+                "%s with name '%s' already exists".formatted(entityName, value)
         );
     }
 }

@@ -1,10 +1,17 @@
 package inventory.management.api.category.entity;
 
-import jakarta.persistence.*;
 
 // ERROR [§1.1]: esta clase viaja hasta el controller en los dos sentidos. Es el
 //               origen del mass assignment y del acoplamiento contrato-esquema.
 //               Debería morir en el service; hacia afuera van DTOs.
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Column;
+
 @Entity
 // OK: nombre de tabla explícito, sin depender de la convención por defecto.
 @Table(name = "tbl_category")

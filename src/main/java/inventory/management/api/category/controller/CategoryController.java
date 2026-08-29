@@ -2,7 +2,7 @@ package inventory.management.api.category.controller;
 
 import inventory.management.api.category.dto.CategoryDto;
 import inventory.management.api.category.dto.CategoryRequestDto;
-import inventory.management.api.category.services.CategoryService;
+import inventory.management.api.category.service.CategoryService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

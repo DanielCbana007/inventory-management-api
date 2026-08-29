@@ -1,4 +1,4 @@
-package inventory.management.api.category.services;
+package inventory.management.api.category.service;
 
 import inventory.management.api.category.dto.CategoryDto;
 import inventory.management.api.category.dto.CategoryRequestDto;

@@ -6,6 +6,7 @@ import inventory.management.api.category.service.CategoryService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -39,11 +40,10 @@ public class CategoryController {
     @PostMapping
     public ResponseEntity<CategoryDto> create(@RequestBody @Valid CategoryRequestDto requestDto) {
         CategoryDto created = this.categoryService.createCategory(requestDto);
-        // MEJORA: sustituye la concatenación por
-        //   ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
-        //       .buildAndExpand(created.id()).toUri()
-        //   Evita construir la URL a mano y devuelve una URL absoluta.
-        URI location = URI.create("/api/v1/categories/" + created.id());
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(created.id())
+                .toUri();
 
         return ResponseEntity.created(location).body(created);
     }

@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// MEJORA: renombra el paquete a "service", en singular como controller/entity/repository.
 @Service
 public class CategoryService {
     private final CategoryRepository categoryRepository;
@@ -49,22 +48,11 @@ public class CategoryService {
 
     @Transactional
     public CategoryDto updateCategory(CategoryRequestDto requestDto, Long id) {
-
-        String name = requestDto.name();
-        String description = requestDto.description();
-
         CategoryEntity category = this.categoryRepository.findById(id)
                 .orElseThrow(() -> CusEntityNotFoundException.of("Category", id));
 
-        // MEJORA: mueve esto a un método de la entidad, p.ej. category.updateWith(name, description).
-        //         Cambiarla desde fuera con setters es un modelo anémico: la responsabilidad de
-        //         modificar un dato pertenece a quien lo tiene (GRASP Experto en Información).
-        category.setName(name);
-        category.setDescription(description);
-
-        // MEJORA: este save() se puede borrar. Dentro de @Transactional, Hibernate detecta el
-        //         cambio por dirty checking y emite el UPDATE al confirmar.
-        CategoryDto dto = this.mapper.toDto(this.categoryRepository.save(category));
+        CategoryDto dto = this.mapper.toDto(category);
+        category.updateWith(requestDto.name(), requestDto.description());
         return dto;
     }
 

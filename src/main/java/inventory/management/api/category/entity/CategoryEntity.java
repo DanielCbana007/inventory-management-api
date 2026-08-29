@@ -7,6 +7,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
 
+import java.util.Objects;
 
 @Entity
 @Table(name = "tbl_category")
@@ -44,6 +45,20 @@ public class CategoryEntity {
     public void updateWith(String name, String description) {
         this.name = name;
         this.description = description;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        CategoryEntity entity = (CategoryEntity) obj;
+        return id != null && Objects.equals(id, entity.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 
     // TODO [§2.2]: crea la entidad Product y su relación con Category (@ManyToOne desde

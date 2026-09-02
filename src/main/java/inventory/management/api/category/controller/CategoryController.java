@@ -3,6 +3,11 @@ package inventory.management.api.category.controller;
 import inventory.management.api.category.dto.CategoryDto;
 import inventory.management.api.category.dto.CategoryRequestDto;
 import inventory.management.api.category.service.CategoryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,12 +29,12 @@ import java.util.List;
  *            Es el único eje que sigue sin poder evaluarse, y en la rúbrica
  *            lo que no está evidenciado no puntúa.
  *  2. [§1.1] Comprobar el duplicado en createCategory antes de guardar.
- *  3. [§2.3] Anotar los endpoints con OpenAPI.
  *  4. [§2.2] Entidad Product y su relación con Category.
  *  5. [§2.4] Paginación en el listado.
  */
 @RestController
 @RequestMapping("/api/v1/categories")
+@Tag(name = "Categories", description = "All methods to categories")
 public class CategoryController {
     private final CategoryService categoryService;
 
@@ -38,7 +43,17 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<CategoryDto> create(@RequestBody @Valid CategoryRequestDto requestDto) {
+    @Operation(
+            summary = "Create category",
+            description = "create a new category",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Category cteated"),
+                    @ApiResponse(responseCode = "400", description = "Category exists", content = @Content)
+            }
+    )
+    public ResponseEntity<CategoryDto> create(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "")
+            @RequestBody @Valid CategoryRequestDto requestDto) {
         CategoryDto created = this.categoryService.createCategory(requestDto);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
@@ -49,6 +64,13 @@ public class CategoryController {
     }
 
     @GetMapping
+    @Operation(
+            summary = "Get all categories",
+            description = "It includes all the app's categories.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "list of categories"),
+            }
+    )
     // TODO [§2.4]: cambia la firma a Page<CategoryDto> getAll(Pageable pageable) y pasa el
     //              Pageable al service. Hoy devuelves la tabla entera.
     public List<CategoryDto> getAll() {
@@ -58,14 +80,46 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CategoryDto> update(@RequestBody @Valid CategoryRequestDto requestDto, @PathVariable Long id) {
+    @Operation(
+            summary = "Update category by ID",
+            description = "ID of the category to be updated",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Updated category"),
+                    @ApiResponse(responseCode = "404", description = "Not found category", content = @Content)
+            }
+    )
+    public ResponseEntity<CategoryDto> update(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Specify which values you want to update.")
+            @RequestBody @Valid CategoryRequestDto requestDto,
+            @Parameter(
+                    name = "id",
+                    description = "ID of category to update",
+                    example = "3",
+                    required = true
+            )
+            @PathVariable Long id) {
         CategoryDto body = this.categoryService.updateCategory(requestDto, id);
 
         return ResponseEntity.ok(body);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    @Operation(
+            summary = "Delete category",
+            description = "ID of the category to be delete",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Category removed"),
+            }
+    )
+    public ResponseEntity<Void> delete(
+            @Parameter(
+                    name = "id",
+                    description = "category ID",
+                    example = "3",
+                    required = true
+            )
+            @PathVariable Long id
+    ) {
         this.categoryService.deleteCategory(id);
 
         return ResponseEntity.noContent().build();

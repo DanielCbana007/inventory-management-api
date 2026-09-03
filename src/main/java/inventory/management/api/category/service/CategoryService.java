@@ -63,12 +63,4 @@ public class CategoryService {
 
         this.categoryRepository.delete(category);
     }
-
-    // TODO [§2.1]: crea CategoryServiceTest con JUnit 5 + Mockito, patrón AAA, con @Mock
-    //              del repositorio y del mapper. Casos mínimos:
-    //                - createCategory devuelve el DTO con el id que asignó save()
-    //                - updateCategory lanza CusEntityNotFoundException si el id no existe
-    //                - updateCategory persiste los campos nuevos
-    //                - deleteCategory lanza CusEntityNotFoundException si el id no existe
-    //              Es el único eje de la rúbrica que sigue sin poder evaluarse.
 }

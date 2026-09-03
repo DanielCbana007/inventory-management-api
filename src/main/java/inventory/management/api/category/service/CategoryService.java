@@ -47,9 +47,8 @@ public class CategoryService {
         CategoryEntity category = this.categoryRepository.findById(id)
                 .orElseThrow(() -> CusEntityNotFoundException.of("Category", id));
 
-        CategoryDto dto = this.mapper.toDto(category);
         category.updateWith(requestDto.name(), requestDto.description());
-        return dto;
+        return this.mapper.toDto(category);
     }
 
     @Transactional

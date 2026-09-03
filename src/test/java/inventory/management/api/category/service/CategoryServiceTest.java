@@ -6,48 +6,53 @@ import inventory.management.api.category.entity.CategoryEntity;
 import inventory.management.api.category.mapper.CategoryMapper;
 import inventory.management.api.category.repository.CategoryRepository;
 import inventory.management.api.exception.CusEntityNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
 @DisplayName("Category service")
 @ExtendWith(MockitoExtension.class)
 class CategoryServiceTest {
-    @Mock
-    private CategoryMapper mapper;
 
     @Mock
     private CategoryRepository repository;
+    private final CategoryMapper mapper = new CategoryMapper();
 
-    @InjectMocks
     private CategoryService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new CategoryService(repository, mapper);
+    }
 
     @Test
     @DisplayName("should return the DTO with the id that save() assigned.")
     void createCategory() {
         // Arrange
         CategoryRequestDto requestDto = new CategoryRequestDto("ACTION", "Action.");
-        CategoryEntity entity = new CategoryEntity("ACTION", "Action.");
-        CategoryEntity savedEntity = new CategoryEntity("ACTION", "Action.");
-        CategoryDto expectDto = new CategoryDto(1L, "ACTION", "Action.");
 
-        when(mapper.toEntity(requestDto)).thenReturn(entity);
-        when(repository.save(entity)).thenReturn(savedEntity);
-        when(mapper.toDto(savedEntity)).thenReturn(expectDto);
+        CategoryEntity savedEntity = new CategoryEntity("ACTION", "Action.");
+        ReflectionTestUtils.setField(savedEntity, "id", 1L);
+
+        when(repository.existsByName("ACTION")).thenReturn(false);
+        when(repository.save(any(CategoryEntity.class))).thenReturn(savedEntity);
 
         // Act
         CategoryDto result = service.createCategory(requestDto);
@@ -57,7 +62,21 @@ class CategoryServiceTest {
         assertEquals(1L, result.id());
         assertEquals("ACTION", result.name());
         assertEquals("Action.", result.description());
+    }
 
+    @Test
+    @DisplayName("Should throw CusEntityAlreadyExistsException when the name already exists.")
+    void createCategoryDuplicate() {
+        // Arrange
+        CategoryRequestDto requestDto = new CategoryRequestDto("ACTION", "Action.");
+
+        when(repository.existsByName("ACTION")).thenReturn(true);
+
+        // Act & Assert
+        assertThrows(inventory.management.api.exception.CusEntityAlreadyExistsException.class,
+                () -> service.createCategory(requestDto));
+
+        verify(repository, never()).save(any(CategoryEntity.class));
     }
 
     @Test
@@ -68,69 +87,101 @@ class CategoryServiceTest {
                 new CategoryEntity("ACTION", "Action."),
                 new CategoryEntity("ANIMATED", "Animated.")
         );
-        List<CategoryDto> categoryDtos =  List.of(
-                new CategoryDto(1L, "ACTION", "Action."),
-                new CategoryDto(2L, "ANIMATED", "Animated.")
-        );
 
         when(repository.findAll()).thenReturn(entities);
-        when(mapper.toDtoAll(entities)).thenReturn(categoryDtos);
 
         // Act
-        List<CategoryDto> resultListDtos = service.getAllCategories();
+        List<CategoryDto> result = service.getAllCategories();
 
         // Assert
-        assertEquals(1L, resultListDtos.get(0).id());
-        assertEquals(2L, resultListDtos.get(1).id());
-        assertEquals(2, resultListDtos.size());
+        assertEquals(2, result.size());
+        assertEquals("ACTION", result.get(0).name());
+        assertEquals("Action.", result.get(0).description());
+        assertEquals("ANIMATED", result.get(1).name());
     }
 
     @Nested
     @DisplayName("updateCategory")
-    class updateCategory {
+    class UpdateCategory {
+
         @Test
-        @DisplayName("Should CusEntityNotFoundException when id not exists.")
-        void updateCategoryException() {
+        @DisplayName("Should throw CusEntityNotFoundException when the id does not exist.")
+        void updateCategoryNotFound() {
             // Arrange
             CategoryRequestDto requestDto = new CategoryRequestDto("ACTION", "Action.");
 
-            when(repository.findById(1L)).thenReturn(Optional.empty());
+            when(repository.findById(99L)).thenReturn(Optional.empty());
 
             // Act & Assert
-            assertThrows(CusEntityNotFoundException.class, () -> {
-                service.updateCategory(requestDto, 1L);
-            });
+            assertThrows(CusEntityNotFoundException.class,
+                    () -> service.updateCategory(requestDto, 99L));
         }
 
         @Test
-        @DisplayName("Should persistence new fileds.")
+        @DisplayName("Should apply the new values to the entity.")
         void updatePersistence() {
             // Arrange
             CategoryRequestDto requestDto = new CategoryRequestDto("ACTION", "Action.");
             CategoryEntity entity = new CategoryEntity("ACIONN", "action");
 
             when(repository.findById(1L)).thenReturn(Optional.of(entity));
-            when(mapper.toDto(entity)).thenReturn(new CategoryDto(1L, "ACTION", "Action."));
+
+            // Act
+            service.updateCategory(requestDto, 1L);
+
+            // Assert
+            assertEquals("ACTION", entity.getName());
+            assertEquals("Action.", entity.getDescription());
+        }
+
+        @Test
+        @DisplayName("Should return the UPDATED values, not the previous ones.")
+        void updateReturnsNewValues() {
+            // Arrange
+            CategoryRequestDto requestDto = new CategoryRequestDto("ACTION", "Action.");
+            CategoryEntity entity = new CategoryEntity("ACIONN", "action");
+
+            when(repository.findById(1L)).thenReturn(Optional.of(entity));
 
             // Act
             CategoryDto result = service.updateCategory(requestDto, 1L);
 
             // Assert
-            assertNotNull(result);
             assertEquals("ACTION", result.name());
             assertEquals("Action.", result.description());
         }
     }
 
-    @Test
-    @DisplayName("Should retund CusEntityNotFoundException id the id not exists.")
-    void deleteCategory() {
-        // Arrange
-        when(repository.findById(1L)).thenReturn(Optional.empty());
+    @Nested
+    @DisplayName("deleteCategory")
+    class DeleteCategory {
 
-        // Act & Assert
-        assertThrows(CusEntityNotFoundException.class, () -> {
+        @Test
+        @DisplayName("Should throw CusEntityNotFoundException when the id does not exist.")
+        void deleteCategoryNotFound() {
+            // Arrange
+            when(repository.findById(99L)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThrows(CusEntityNotFoundException.class,
+                    () -> service.deleteCategory(99L));
+
+            verify(repository, never()).delete(any(CategoryEntity.class));
+        }
+
+        @Test
+        @DisplayName("Should delete the entity found by id.")
+        void deleteCategoryOk() {
+            // Arrange
+            CategoryEntity entity = new CategoryEntity("ACTION", "Action.");
+
+            when(repository.findById(1L)).thenReturn(Optional.of(entity));
+
+            // Act
             service.deleteCategory(1L);
-        });
+
+            // Assert
+            verify(repository).delete(entity);
+        }
     }
 }

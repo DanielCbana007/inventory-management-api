@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.util.List;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
@@ -47,12 +49,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             MethodArgumentNotValidException ex, HttpHeaders headers,
             HttpStatusCode status, WebRequest request) {
 
-        var errors = ex.getBindingResult().getFieldErrors().stream()
-                // MEJORA: añade fe.getCode() al detalle. getDefaultMessage() sale de los
-                //         bundles de Hibernate Validator y CAMBIA según la cabecera
-                //         Accept-Language (verificado en es/en/de/ja), así que ningún cliente
-                //         puede programar contra ese texto. getCode() es estable.
-                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+        List<ValidationError> errors = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> new ValidationError(
+                        fe.getField(),
+                        fe.getCode(),
+                        fe.getDefaultMessage()))
                 .toList();
 
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed");

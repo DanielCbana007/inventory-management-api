@@ -5,6 +5,7 @@ import inventory.management.api.category.dto.CategoryRequestDto;
 import inventory.management.api.category.entity.CategoryEntity;
 import inventory.management.api.category.mapper.CategoryMapper;
 import inventory.management.api.category.repository.CategoryRepository;
+import inventory.management.api.exception.CusEntityAlreadyExistsException;
 import inventory.management.api.exception.CusEntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,21 +22,16 @@ public class CategoryService {
         this.mapper = mapper;
     }
 
-    // TODO [§1.1]: comprueba el duplicado antes de guardar:
-    //     if (categoryRepository.existsByName(requestDto.name()))
-    //         throw CusEntityAlreadyExistsException.of("Category", requestDto.name());
-    //
-    //   Hoy el 409 llega por la restricción unique de Postgres, así que el mensaje es
-    //   genérico y no dice qué nombre chocó. Deja esa restricción como red de seguridad:
-    //   entre tu comprobación y el save() cabe otra petición con el mismo nombre.
-    //
-    //   Al añadirlo serán DOS llamadas al repositorio, así que este método pasará a
-    //   necesitar @Transactional. Hoy no lo lleva y es correcto: una sola llamada, y
-    //   save() ya es transaccional por dentro.
+    @Transactional
     public CategoryDto createCategory(CategoryRequestDto requestDto) {
-        CategoryEntity newCategory = this.mapper.toEntity(requestDto);
 
+        if (categoryRepository.existsByName(requestDto.name())){
+            throw CusEntityAlreadyExistsException.of("Category", requestDto.name());
+        }
+
+        CategoryEntity newCategory = this.mapper.toEntity(requestDto);
         CategoryDto dto = this.mapper.toDto(this.categoryRepository.save(newCategory));
+
         return dto;
     }
 

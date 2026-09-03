@@ -25,7 +25,6 @@ import java.util.List;
  * Borra cada marca en el mismo commit que la resuelve.
  *
  * ---- ORDEN QUE MAS DESBLOQUEA ----
- *  2. [§1.1] Comprobar el duplicado en createCategory antes de guardar.
  *  4. [§2.2] Entidad Product y su relación con Category.
  *  5. [§2.4] Paginación en el listado.
  */

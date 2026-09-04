@@ -159,11 +159,4 @@ public class CategoryController {
         // OK [§4]: 204 sin cuerpo, correcto para un borrado.
         return ResponseEntity.noContent().build();
     }
-
-    // FALTA [§2.3]: sin CategoryControllerTest. Los 11 casos ya verificados con curl son
-    //        el guion: 201 crear - 200 listar - 404 put y delete inexistentes - 400 sin name -
-    //        400 name en blanco - 400 name largo - 409 duplicado - 400 json roto -
-    //        400 id no numerico - 405 verbo no soportado.
-    //        Se escriben con @WebMvcTest(CategoryController.class) + MockMvc + @MockitoBean
-    //        del service. Ojo: @MockBean ya no existe en Spring 7.
 }

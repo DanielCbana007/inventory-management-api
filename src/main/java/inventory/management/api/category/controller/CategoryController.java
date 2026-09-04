@@ -20,28 +20,12 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
-/*
- * ==== PENDIENTE - docs/seguimiento/auditoria-3.md ====
- *
- * ERROR  : comportamiento incorrecto en el codigo que existe.
- * FALTA  : alcance previsto que aun no se ha abordado.
- * MEJORA : no bloquea; separa Habilita de Domina.
- * OK     : esta bien hecho y es defendible en entrevista. No lo toques.
- *
- * El sufijo [§x] apunta a la seccion de docs/seguimiento/auditoria-3.md
- * Borra cada marca en el mismo commit que resuelve lo que describe.
- *
- * Despues: tests de controller, entidad Product, paginacion.
- */
-// OK [§4]: un unico recurso con prefijo versionado, identificador estable y @Tag para
-//          agrupar en Swagger UI. Verificado: 11 de 11 status codes correctos.
 @RestController
 @RequestMapping("/api/v1/categories")
 @Tag(name = "Categories", description = "Create, read, replace and delete inventory categories")
 public class CategoryController {
     private final CategoryService categoryService;
 
-    // OK: inyeccion por constructor con campo final. IoC/DI aplicado.
     public CategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
     }
@@ -66,8 +50,8 @@ public class CategoryController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Specify how you want to create the category")
             @RequestBody @Valid CategoryRequestDto requestDto) {
         CategoryDto created = this.categoryService.createCategory(requestDto);
-        // OK [§4]: construye la URL desde la peticion actual en vez de concatenar a mano.
-        //          Verificado: Location: http://localhost:8099/api/v1/categories/57
+        // Se construye desde la peticion actual: evita duplicar la ruta y las URLs mal
+        // formadas al concatenar a mano.
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(created.id())
@@ -122,9 +106,6 @@ public class CategoryController {
                     required = true
             )
             @PathVariable Long id) {
-        // OK [§4]: el bloqueante de la auditoria 3 esta cerrado. El service ya aplica los
-        //          cambios ANTES de mapear, asi que la respuesta lleva los valores nuevos.
-        //          Comprobar con: POST -> PUT con otro valor -> comparar respuesta con el GET.
         CategoryDto body = this.categoryService.updateCategory(requestDto, id);
 
         return ResponseEntity.ok(body);
@@ -156,7 +137,6 @@ public class CategoryController {
     ) {
         this.categoryService.deleteCategory(id);
 
-        // OK [§4]: 204 sin cuerpo, correcto para un borrado.
         return ResponseEntity.noContent().build();
     }
 }

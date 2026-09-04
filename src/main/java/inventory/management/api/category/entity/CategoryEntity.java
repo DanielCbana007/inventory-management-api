@@ -1,12 +1,17 @@
 package inventory.management.api.category.entity;
 
+import inventory.management.api.product.entity.ProductEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -24,6 +29,9 @@ public class CategoryEntity {
 
     @Column(length = 500)
     private String description;
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductEntity> products = new ArrayList<>();
 
     public CategoryEntity() {
     }
@@ -71,9 +79,4 @@ public class CategoryEntity {
     public int hashCode() {
         return getClass().hashCode();
     }
-
-    // FALTA [§2.2]: no hay entidad Product ni relacion con Category (@ManyToOne desde
-    //        Product). Es una API de inventario y el producto no existe: sin el no hay modelo
-    //        ER que normalizar ni asociacion JPA que demostrar. Es lo que mas superficie nueva
-    //        del plan abre.
 }

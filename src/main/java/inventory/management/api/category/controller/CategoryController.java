@@ -5,10 +5,14 @@ import inventory.management.api.category.dto.CategoryRequestDto;
 import inventory.management.api.category.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -26,10 +30,6 @@ import java.util.List;
  *
  * El sufijo [§x] apunta a la seccion de docs/seguimiento/auditoria-3.md
  * Borra cada marca en el mismo commit que resuelve lo que describe.
- *
- * ---- UNICO EJE POR DEBAJO DE HABILITA: OpenAPI ----
- *  1. [§1.3] Los @ApiResponse declaran status que la API no devuelve.  <-- aqui
- *  3. [§1.5] ProblemDetail no aparece en los esquemas publicados.
  *
  * Despues: tests de controller, entidad Product, paginacion.
  */
@@ -51,26 +51,19 @@ public class CategoryController {
             summary = "Create category",
             description = "create a new category",
             responses = {
-                    // ERROR [§1.3]: este endpoint NUNCA devuelve 200. Devuelve 201 (verificado
-                    //        con curl: HTTP 201 + Location). Un cliente que trate cualquier codigo
-                    //        distinto de 200 como error rechazara todas las creaciones correctas.
-                    //        Ademas: "cteated" -> "created", y ese texto se ve en Swagger UI.
-                    @ApiResponse(responseCode = "200", description = "Category cteated"),
-                    // ERROR [§1.3]: "Category exists" describe un 409, no un 400. El 400 es para
-                    //        datos invalidos (name vacio, en blanco o de mas de 100 caracteres).
-                    // FALTA [§1.3]: no se declara el 409, que ahora SI ocurre desde el service
-                    //        (existsByName + CusEntityAlreadyExistsException).
-                    // FALTA [§1.5]: content = @Content vacio, asi que el contrato no dice que los
-                    //        errores llegan como ProblemDetail (RFC 9457) con un array `errors`.
-                    //        Se declara con schema = @Schema(implementation = ProblemDetail.class)
-                    //        y mediaType = "application/problem+json".
-                    @ApiResponse(responseCode = "400", description = "Category exists", content = @Content)
+                    @ApiResponse(responseCode = "201", description = "Category created",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = CategoryDto.class))),
+                    @ApiResponse(responseCode = "409", description = "Category exists",
+                            content = @Content(mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetail.class))),
+                    @ApiResponse(responseCode = "400", description = "Invalid data",
+                            content = @Content(mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetail.class)))
             }
     )
     public ResponseEntity<CategoryDto> create(
-            // MEJORA [§3]: descripcion vacia y nombre completamente cualificado en vez de un
-            //        import. Si no aporta nada, quitala.
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "")
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Specify how you want to create the category")
             @RequestBody @Valid CategoryRequestDto requestDto) {
         CategoryDto created = this.categoryService.createCategory(requestDto);
         // OK [§4]: construye la URL desde la peticion actual en vez de concatenar a mano.
@@ -88,7 +81,9 @@ public class CategoryController {
             summary = "Get all categories",
             description = "It includes all the app's categories.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "list of categories"),
+                    @ApiResponse(responseCode = "200", description = "list of categories",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    array = @ArraySchema(schema = @Schema(implementation = CategoryDto.class)))),
             }
     )
     // MEJORA [§2.4]: sin paginacion; devuelve la tabla entera. Con Category (decenas de
@@ -106,11 +101,15 @@ public class CategoryController {
             summary = "Update category by ID",
             description = "ID of the category to be updated",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Updated category"),
-                    // FALTA [§1.3]: no se declara el 400, que si ocurre (name invalido, o un id
-                    //        no numerico en la ruta). Verificado con curl.
-                    // FALTA [§1.5]: content vacio; falta declarar ProblemDetail.
-                    @ApiResponse(responseCode = "404", description = "Not found category", content = @Content)
+                    @ApiResponse(responseCode = "200", description = "Updated category",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = CategoryDto.class))),
+                    @ApiResponse(responseCode = "400", description = "Name or ID invalid",
+                            content = @Content(mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetail.class))),
+                    @ApiResponse(responseCode = "404", description = "Not found category",
+                            content = @Content(mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetail.class)))
             }
     )
     public ResponseEntity<CategoryDto> update(
@@ -136,9 +135,14 @@ public class CategoryController {
             summary = "Delete category",
             description = "ID of the category to be delete",
             responses = {
-                    // ERROR [§1.3]: este endpoint NUNCA devuelve 200. Devuelve 204 No Content
-                    //        (verificado). Y faltan el 404 y el 400, que si ocurren.
-                    @ApiResponse(responseCode = "200", description = "Category removed"),
+                    @ApiResponse(responseCode = "204", description = "Category removed",
+                            content = @Content),
+                    @ApiResponse(responseCode = "400", description = "The id is not a valid number",
+                            content = @Content(mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetail.class))),
+                    @ApiResponse(responseCode = "404", description = "No category exists with that id",
+                            content = @Content(mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetail.class)))
             }
     )
     public ResponseEntity<Void> delete(

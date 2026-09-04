@@ -36,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(CategoryController.class)
 class CategoryControllerTest {
-    private static final String apiUrl = "/api/v1";
+    private static final String PATH = "/api/v1";
 
     @Autowired
     private MockMvc mockMvc;
@@ -61,7 +61,7 @@ class CategoryControllerTest {
             when(service.createCategory(any(CategoryRequestDto.class))).thenReturn(response);
 
             // Act & Assert
-            mockMvc.perform(post(apiUrl + "/categories")
+            mockMvc.perform(post(PATH + "/categories")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -79,7 +79,7 @@ class CategoryControllerTest {
                     .thenThrow(CusEntityAlreadyExistsException.of("Category", "ACTION"));
 
             // Act & Assert
-            mockMvc.perform(post(apiUrl + "/categories")
+            mockMvc.perform(post(PATH + "/categories")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict())
@@ -91,7 +91,7 @@ class CategoryControllerTest {
         @DisplayName("POST should return 400 when Invalid data")
         void createReturn400() throws Exception {
             // Act & Assert
-            mockMvc.perform(post(apiUrl + "/categories")
+            mockMvc.perform(post(PATH + "/categories")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"name\":\"   \"}"))
                     .andExpect(status().isBadRequest())
@@ -115,7 +115,7 @@ class CategoryControllerTest {
             when(service.getAllCategories()).thenReturn(categoryDtos);
 
             // Act & Assert
-            mockMvc.perform(get(apiUrl + "/categories"))
+            mockMvc.perform(get(PATH + "/categories"))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$", hasSize(2)))
@@ -138,7 +138,7 @@ class CategoryControllerTest {
             when(service.updateCategory(any(CategoryRequestDto.class), eq(1L))).thenReturn(response);
 
             // Act & Assert
-            mockMvc.perform(put(apiUrl + "/categories/1")
+            mockMvc.perform(put(PATH + "/categories/1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(requestDto)))
                     .andExpect(status().isOk())
@@ -157,7 +157,7 @@ class CategoryControllerTest {
                     .thenThrow(CusEntityNotFoundException.of("Category", 99L));
 
             // Act & Assert
-            mockMvc.perform(put(apiUrl + "/categories/99")
+            mockMvc.perform(put(PATH + "/categories/99")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(requestDto)))
                     .andExpect(status().isNotFound())
@@ -169,7 +169,7 @@ class CategoryControllerTest {
         @DisplayName("PUT should return 400 when the id is not a valid number")
         void updateReturn400() throws Exception {
             // Act & Assert: Spring falla al convertir "abc" a Long y nunca llega al service.
-            mockMvc.perform(put(apiUrl + "/categories/abc")
+            mockMvc.perform(put(PATH + "/categories/abc")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"name\":\"ACTION\",\"description\":\"Action\"}"))
                     .andExpect(status().isBadRequest())
@@ -186,7 +186,7 @@ class CategoryControllerTest {
         @DisplayName("DELETE should return 204 when the category is deleted")
         void deleteReturn204() throws Exception {
             // Act & Assert
-            mockMvc.perform(delete(apiUrl + "/categories/1"))
+            mockMvc.perform(delete(PATH + "/categories/1"))
                     .andExpect(status().isNoContent())
                     .andExpect(content().string(""));
 
@@ -201,7 +201,7 @@ class CategoryControllerTest {
                     .when(service).deleteCategory(99L);
 
             // Act & Assert
-            mockMvc.perform(delete(apiUrl + "/categories/99"))
+            mockMvc.perform(delete(PATH + "/categories/99"))
                     .andExpect(status().isNotFound())
                     .andExpect(content().contentType("application/problem+json"))
                     .andExpect(jsonPath("$.detail").value(containsString("99")));
@@ -211,7 +211,7 @@ class CategoryControllerTest {
         @DisplayName("DELETE should return 400 when the id is not a valid number")
         void deleteReturn400() throws Exception {
             // Act & Assert
-            mockMvc.perform(delete(apiUrl + "/categories/abc"))
+            mockMvc.perform(delete(PATH + "/categories/abc"))
                     .andExpect(status().isBadRequest())
                     .andExpect(content().contentType("application/problem+json"));
 

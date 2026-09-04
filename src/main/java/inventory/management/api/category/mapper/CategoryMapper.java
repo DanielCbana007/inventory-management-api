@@ -10,13 +10,11 @@ import java.util.List;
 @Component
 public class CategoryMapper {
     public CategoryDto toDto(CategoryEntity entity){
-        CategoryDto dto = new CategoryDto(
+        return new CategoryDto(
                 entity.getId(),
                 entity.getName(),
                 entity.getDescription()
         );
-
-        return dto;
     }
 
     public List<CategoryDto> toDtoAll(List<CategoryEntity> entities){

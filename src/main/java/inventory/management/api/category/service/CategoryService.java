@@ -14,6 +14,8 @@ import java.util.List;
 
 @Service
 public class CategoryService {
+    private static final String ENTITY_NAME = "Category";
+
     private final CategoryRepository categoryRepository;
     private final CategoryMapper mapper;
 
@@ -30,13 +32,11 @@ public class CategoryService {
         //     desde la restriccion unique de Postgres. Esa restriccion NO sobra: es la
         //     garantia real para la condicion de carrera entre este if y el save().
         if (categoryRepository.existsByName(requestDto.name())){
-            throw CusEntityAlreadyExistsException.of("Category", requestDto.name());
+            throw CusEntityAlreadyExistsException.of(ENTITY_NAME, requestDto.name());
         }
 
         CategoryEntity newCategory = this.mapper.toEntity(requestDto);
-        CategoryDto dto = this.mapper.toDto(this.categoryRepository.save(newCategory));
-
-        return dto;
+        return  this.mapper.toDto(this.categoryRepository.save(newCategory));
     }
 
     // MEJORA [§2.4]: findAll() sin Pageable trae la tabla entera. Ver la nota del controller.
@@ -49,7 +49,7 @@ public class CategoryService {
     @Transactional
     public CategoryDto updateCategory(CategoryRequestDto requestDto, Long id) {
         CategoryEntity category = this.categoryRepository.findById(id)
-                .orElseThrow(() -> CusEntityNotFoundException.of("Category", id));
+                .orElseThrow(() -> CusEntityNotFoundException.of(ENTITY_NAME, id));
 
         // BLOQUEANTE de la auditoria 3 cerrado. Estas dos lineas estuvieron en
         //     orden inverso y el PUT respondia los valores ANTIGUOS mientras guardaba los
@@ -64,7 +64,7 @@ public class CategoryService {
     @Transactional
     public void deleteCategory(Long id) {
         CategoryEntity category = this.categoryRepository.findById(id)
-                .orElseThrow(() -> CusEntityNotFoundException.of("Category", id));
+                .orElseThrow(() -> CusEntityNotFoundException.of(ENTITY_NAME, id));
 
         this.categoryRepository.delete(category);
     }

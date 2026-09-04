@@ -75,9 +75,7 @@ public class CategoryController {
     //        Ojo al orden: cambia el contrato de List<T> a Page<T>, asi que hacerlo despues
     //        de anotar OpenAPI y de escribir los tests obliga a rehacer los dos.
     public List<CategoryDto> getAll() {
-        List<CategoryDto> body = this.categoryService.getAllCategories();
-
-        return body;
+        return this.categoryService.getAllCategories();
     }
 
     @PutMapping("/{id}")

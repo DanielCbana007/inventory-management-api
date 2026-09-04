@@ -9,8 +9,6 @@ import jakarta.persistence.Column;
 
 import java.util.Objects;
 
-// OK [§4]: esta clase no sale del service. No aparece en ningun import del controller, y
-//          por eso OpenAPI publica CategoryDto y CategoryRequestDto en vez de la tabla.
 @Entity
 @Table(name = "tbl_category")
 public class CategoryEntity {
@@ -19,7 +17,7 @@ public class CategoryEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // OK: la restriccion unique es la garantia real de unicidad frente a la condicion de
+    // la restriccion unique es la garantia real de unicidad frente a la condicion de
     //     carrera del service. nullable y length protegen la integridad por cualquier via.
     @Column(unique = true, nullable = false, length = 100)
     private String name;
@@ -47,19 +45,19 @@ public class CategoryEntity {
         return description;
     }
 
-    // OK [§4]: un unico metodo que recibe el cambio completo, en vez de setters sueltos.
-    //          La responsabilidad de modificar los datos vive en quien los tiene
-    //          (GRASP Experto en Informacion). Si aparece una regla -normalizar el nombre,
-    //          por ejemplo- este es el sitio, y valdria para cualquier via de entrada.
+    // un unico metodo que recibe el cambio completo, en vez de setters sueltos.
+    //     La responsabilidad de modificar los datos vive en quien los tiene
+    //     (GRASP Experto en Informacion). Si aparece una regla -normalizar el nombre,
+    //     por ejemplo- este es el sitio, y valdria para cualquier via de entrada.
     public void updateWith(String name, String description) {
         this.name = name;
         this.description = description;
     }
 
-    // OK [§4]: patron correcto para entidades JPA. Compara por id con guarda de null
-    //          (una entidad sin persistir no es igual a ninguna otra) y hashCode constante
-    //          para la clase, para que meterla en un Set antes de guardarla y recibir el id
-    //          despues no la vuelva irrecuperable.
+    // patron correcto para entidades JPA. Compara por id con guarda de null
+    //     (una entidad sin persistir no es igual a ninguna otra) y hashCode constante
+    //     para la clase, para que meterla en un Set antes de guardarla y recibir el id
+    //     despues no la vuelva irrecuperable.
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;

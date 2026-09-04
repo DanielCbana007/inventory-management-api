@@ -29,7 +29,6 @@ import java.util.List;
  *
  * ---- UNICO EJE POR DEBAJO DE HABILITA: OpenAPI ----
  *  1. [§1.3] Los @ApiResponse declaran status que la API no devuelve.  <-- aqui
- *  2. [§1.4] Falta el @Bean de OpenAPI: el documento no tiene titulo ni version.
  *  3. [§1.5] ProblemDetail no aparece en los esquemas publicados.
  *
  * Despues: tests de controller, entidad Product, paginacion.
@@ -156,10 +155,6 @@ public class CategoryController {
         // OK [§4]: 204 sin cuerpo, correcto para un borrado.
         return ResponseEntity.noContent().build();
     }
-
-    // FALTA [§1.4]: no existe ningun @Bean de OpenAPI, asi que el documento se titula
-    //        "OpenAPI definition vv0" (el valor por defecto de springdoc). Es lo unico del
-    //        documento que springdoc no puede deducir leyendo el codigo.
 
     // FALTA [§2.3]: sin CategoryControllerTest. Los 11 casos ya verificados con curl son
     //        el guion: 201 crear - 200 listar - 404 put y delete inexistentes - 400 sin name -

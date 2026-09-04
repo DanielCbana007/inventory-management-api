@@ -37,7 +37,7 @@ import java.util.List;
 //          agrupar en Swagger UI. Verificado: 11 de 11 status codes correctos.
 @RestController
 @RequestMapping("/api/v1/categories")
-@Tag(name = "Categories", description = "All methods to categories")
+@Tag(name = "Categories", description = "Create, read, replace and delete inventory categories")
 public class CategoryController {
     private final CategoryService categoryService;
 
@@ -49,15 +49,15 @@ public class CategoryController {
     @PostMapping
     @Operation(
             summary = "Create category",
-            description = "create a new category",
+            description = "Registers a new category and returns the created resource with the id assigned by the database. The Location header points to its URL. The name must be unique.",
             responses = {
                     @ApiResponse(responseCode = "201", description = "Category created",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = CategoryDto.class))),
-                    @ApiResponse(responseCode = "409", description = "Category exists",
+                    @ApiResponse(responseCode = "409", description = "A category with that name already exists",
                             content = @Content(mediaType = "application/problem+json",
                                     schema = @Schema(implementation = ProblemDetail.class))),
-                    @ApiResponse(responseCode = "400", description = "Invalid data",
+                    @ApiResponse(responseCode = "400", description = "The name is missing, blank or longer than 100 characters",
                             content = @Content(mediaType = "application/problem+json",
                                     schema = @Schema(implementation = ProblemDetail.class)))
             }
@@ -79,9 +79,9 @@ public class CategoryController {
     @GetMapping
     @Operation(
             summary = "Get all categories",
-            description = "It includes all the app's categories.",
+            description = "Returns the whole catalogue. Not paginated yet.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "list of categories",
+                    @ApiResponse(responseCode = "200", description = "List of categories",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     array = @ArraySchema(schema = @Schema(implementation = CategoryDto.class)))),
             }
@@ -99,15 +99,15 @@ public class CategoryController {
     @PutMapping("/{id}")
     @Operation(
             summary = "Update category by ID",
-            description = "ID of the category to be updated",
+            description = "Replaces the category as a whole. This is a PUT, not a PATCH: fields you do not send are set to null, they do not keep their previous value.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Updated category",
+                    @ApiResponse(responseCode = "200", description = "Category updated",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = CategoryDto.class))),
-                    @ApiResponse(responseCode = "400", description = "Name or ID invalid",
+                    @ApiResponse(responseCode = "400", description = "The name is invalid or the id is not a number",
                             content = @Content(mediaType = "application/problem+json",
                                     schema = @Schema(implementation = ProblemDetail.class))),
-                    @ApiResponse(responseCode = "404", description = "Not found category",
+                    @ApiResponse(responseCode = "404", description = "No category exists with that id",
                             content = @Content(mediaType = "application/problem+json",
                                     schema = @Schema(implementation = ProblemDetail.class)))
             }
@@ -117,7 +117,7 @@ public class CategoryController {
             @RequestBody @Valid CategoryRequestDto requestDto,
             @Parameter(
                     name = "id",
-                    description = "ID of category to update",
+                    description = "Id of the category to replace",
                     example = "3",
                     required = true
             )
@@ -133,9 +133,9 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Delete category",
-            description = "ID of the category to be delete",
+            description = "Deletes the given category. Returns no body.",
             responses = {
-                    @ApiResponse(responseCode = "204", description = "Category removed",
+                    @ApiResponse(responseCode = "204", description = "Category deleted",
                             content = @Content),
                     @ApiResponse(responseCode = "400", description = "The id is not a valid number",
                             content = @Content(mediaType = "application/problem+json",
@@ -148,7 +148,7 @@ public class CategoryController {
     public ResponseEntity<Void> delete(
             @Parameter(
                     name = "id",
-                    description = "category ID",
+                    description = "Id of the category to delete",
                     example = "3",
                     required = true
             )

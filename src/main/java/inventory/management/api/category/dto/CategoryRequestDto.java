@@ -1,15 +1,19 @@
 package inventory.management.api.category.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 // OK [§4]: DTO de ENTRADA. No lleva id a proposito: aceptarlo seria mass assignment.
 //          La validacion vive aqui, en el borde, que es donde el estandar la situa.
-// MEJORA [§3]: sin @Schema con description y example, el formulario de Swagger UI sale
-//        vacio y quien lo use escribe a ciegas. NO repitas ahi "obligatorio" ni "maximo 100":
-//        springdoc lee @NotBlank y @Size y los refleja solos como required y maxLength.
+@Schema(name = "CategoryRequest", description = "Payload to create or replace a category")
 public record CategoryRequestDto(
-        @NotBlank @Size(max = 100) String name,
+        @Schema(description = "Name of the category. Must be unique.",
+                example = "Electronics")
+        @NotBlank @Size(min = 1, max = 100) String name,
+
+        @Schema(description = "Free-text description of the category.",
+                example = "Electronic devices and gadgets")
         String description
 ) {
 }

@@ -14,24 +14,30 @@ import java.util.List;
 public class OpenApiConfig {
 
     @Bean
-    public OpenAPI customOpenAPI (){
+    public OpenAPI customOpenAPI() {
         return new OpenAPI()
-                .info( new Info()
-                        .title("Inventory management.")
+                .info(new Info()
+                        .title("Inventory Management API")
                         .version("1.0.0")
-                        .description("API REST para la gestión de un inventario. "
-                                + "Los errores siguen el RFC 9457 (Problem Details).")
+                        .description("""
+                                REST API for inventory management.
+
+                                Errors are returned as **RFC 9457 (Problem Details)** with
+                                `type`, `title`, `status` and `detail`. Validation responses add
+                                an `errors` property holding one object per field with `field`,
+                                `code` and `message`.
+
+                                `code` is stable (`NotBlank`, `Size`); `message` changes with the
+                                `Accept-Language` header, so clients must not branch on it.""")
                         .contact(new Contact()
                                 .name("Daniel Andres Cabana Trejos")
-                                .email("danielcabana0727@gmail.com")
                                 .url("https://github.com/DanielCbana007"))
                         .license(new License()
                                 .name("MIT License")
-                                .url("https://opensource.org/licenses/MIT")
-                        )
-                )
+                                .url("https://opensource.org/licenses/MIT")))
                 .servers(List.of(
-                        new Server().url("http://localhost:8080").description("local")
-                ));
+                        new Server()
+                                .url("http://localhost:8080")
+                                .description("Local environment (dev profile)")));
     }
 }

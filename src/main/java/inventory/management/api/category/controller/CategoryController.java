@@ -20,6 +20,19 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
+/**
+ * Marcas de auditoria. Apuntan a docs/seguimiento/auditoria-5.md; el sufijo [§x] es la
+ * seccion donde esta el porque largo.
+ *
+ *   BLOQUEANTE  impide cerrar la auditoria. Maxima prioridad.
+ *   ERROR       comportamiento incorrecto en el codigo que ya existe.
+ *   FALTA       alcance previsto que aun no se ha abordado.
+ *   MEJORA      no bloquea; es lo que separa Habilita de Domina en la rubrica.
+ *   OK          esta bien hecho y se defiende en entrevista. No lo toques.
+ *
+ * Regla: cada marca se borra en el MISMO commit que resuelve lo que describe. Una marca
+ * que describe un defecto ya corregido miente, y quien lea el archivo se la cree.
+ */
 @RestController
 @RequestMapping("/api/v1/categories")
 @Tag(name = "Categories", description = "Create, read, replace and delete inventory categories")
@@ -35,6 +48,9 @@ public class CategoryController {
             summary = "Create category",
             description = "Registers a new category and returns the created resource with the id assigned by the database. The Location header points to its URL. The name must be unique.",
             responses = {
+                    // MEJORA [§3.4]: el 201 devuelve una cabecera Location y aqui no se declara.
+                    //         Un generador de clientes lee el contrato, no la prosa de la
+                    //         descripcion, asi que el cliente generado la ignora.
                     @ApiResponse(responseCode = "201", description = "Category created",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = CategoryDto.class))),
@@ -50,6 +66,14 @@ public class CategoryController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Specify how you want to create the category")
             @RequestBody @Valid CategoryRequestDto requestDto) {
         CategoryDto created = this.categoryService.createCategory(requestDto);
+        // ERROR [§1.1]: esta Location apunta a una URL que responde 405, porque abajo no hay
+        //        ningun GET /{id}. Verificado en la auditoria 5:
+        //            POST /api/v1/categories      -> 201  Location: .../categories/276
+        //            GET  /api/v1/categories/276  -> 405  "Method 'GET' is not supported."
+        //        RFC 9110 10.2.2: Location es la URI del recurso creado. El cliente que la
+        //        siga -que es justo para lo que esta- se rompe.
+        //        Resuelto cuando: seguir la Location de un POST recien hecho devuelve 200
+        //        con el recurso.
         // Se construye desde la peticion actual: evita duplicar la ruta y las URLs mal
         // formadas al concatenar a mano.
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -70,13 +94,17 @@ public class CategoryController {
                                     array = @ArraySchema(schema = @Schema(implementation = CategoryDto.class)))),
             }
     )
-    // MEJORA [§2.4]: sin paginacion; devuelve la tabla entera. Con Category (decenas de
-    //        filas) es YAGNI; hazlo con Product, donde los miles de filas son lo normal.
-    //        Ojo al orden: cambia el contrato de List<T> a Page<T>, asi que hacerlo despues
-    //        de anotar OpenAPI y de escribir los tests obliga a rehacer los dos.
+    // MEJORA [§2.3]: sin paginacion; devuelve la tabla entera. Cambia el contrato de
+    //         List<T> a Page<T>, asi que va DESPUES de los tests: hacerlo antes obliga a
+    //         reescribirlos.
     public List<CategoryDto> getAll() {
         return this.categoryService.getAllCategories();
     }
+
+    // FALTA [§2.2]: no existe GET /{id}. Sin el, el recurso de item solo tiene 3 de los 4
+    //        verbos y la Location del POST no se puede seguir. Es competencia JUNIOR
+    //        evaluada directamente. Debe responder 200 con el recurso y 404 con
+    //        ProblemDetail, y llevar su @Operation como los demas.
 
     @PutMapping("/{id}")
     @Operation(

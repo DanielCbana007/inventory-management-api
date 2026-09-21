@@ -35,6 +35,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CategoryController.class)
+// FALTA [§2.1]: faltan dos casos de la matriz que la API si cubre: 405 (verbo no soportado
+//        sobre la coleccion) y 400 por JSON malformado. Los dos vienen de
+//        ResponseEntityExceptionHandler, asi que el test protege que nadie lo desactive.
 class CategoryControllerTest {
     private static final String PATH = "/api/v1";
 

@@ -39,7 +39,7 @@ public class CategoryService {
         return  this.mapper.toDto(this.categoryRepository.save(newCategory));
     }
 
-    // MEJORA [§2.4]: findAll() sin Pageable trae la tabla entera. Ver la nota del controller.
+    // MEJORA [§2.3]: findAll() sin Pageable trae la tabla entera. Ver la nota del controller.
     @Transactional(readOnly = true)
     public List<CategoryDto> getAllCategories() {
         List<CategoryEntity> listCategories = this.categoryRepository.findAll();

@@ -14,6 +14,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+// ERROR [§1.4]: la clase se llama ProdurctService. La errata esta en un identificador
+//        publico: aparece en el import de ProductController, en su constructor y en todo test
+//        futuro, asi que cuanto mas tarde se arregle mas archivos toca el commit. No es un
+//        trade-off, es descuido, y se ve en los primeros treinta segundos de una revision.
+//        Usa Shift+F6 (renombrar) de IntelliJ, que actualiza imports y referencias.
+// FALTA [§2.1]: cero tests. Es el servicio MAS complejo del proyecto -dos repositorios, una
+//        relacion y dos motivos distintos de 404- y el unico sin cobertura. CLAUDE.md exige
+//        cobertura al menos en la capa de servicio. Los siete casos estan en la auditoria.
+//        Usa el mapper REAL, como en CategoryServiceTest: con el mapper mockeado, el caso
+//        "actualizar devuelve los valores nuevos" no puede fallar nunca.
 @Service
 public class ProdurctService {
     private final ProductRepository productRepository;
@@ -33,6 +43,9 @@ public class ProdurctService {
             throw CusEntityAlreadyExistsException.of("Product", requestDto.sku());
         }
 
+        // OK [§4]: la categoria se RESUELVE por id contra la base, no se acepta del cliente.
+        //     Aceptar aqui un CategoryDto completo seria mass assignment sobre la tabla de
+        //     categorias desde el endpoint de productos. Esto se defiende solo en entrevista.
         CategoryEntity category = categoryRepository.findById(requestDto.categoryId())
                 .orElseThrow(() -> CusEntityNotFoundException.of("Category", requestDto.categoryId()));
 
@@ -41,6 +54,11 @@ public class ProdurctService {
     }
 
     // Read
+    // MEJORA [§3.1]: N+1 medido, no supuesto. 19 productos -> 5 SELECT (1 sobre tbl_product
+    //         y 1 por cada categoria distinta). Son 5 y no 20 solo porque hay 4 categorias y
+    //         la cache de la sesion deduplica; con 500 productos en 80 categorias son 81
+    //         consultas para pintar una lista. El fetch = LAZY es correcto y NO es la causa:
+    //         falta pedir la categoria de golpe con @EntityGraph en el repositorio.
     @Transactional(readOnly = true)
     public List<ProductDto> getAllProducts(){
         List<ProductEntity> listProduct = this.productRepository.findAll();
@@ -63,10 +81,20 @@ public class ProdurctService {
                 category
         );
 
+        // ERROR [§1.2]: este toDto corre ANTES del flush, y @UpdateTimestamp escribe updatedAt
+        //        EN el flush. La respuesta del PUT sale con el updatedAt viejo. Verificado:
+        //            PUT  /api/v1/products/112 -> 200  "updatedAt":"2026-09-04T18:32:15" (creacion)
+        //            GET  /api/v1/products     -> 200  "updatedAt":"2026-09-04T18:32:47" (real)
+        //        La base queda bien; la respuesta miente. Un cliente que use updatedAt para
+        //        cache o concurrencia optimista se equivoca en todos los PUT.
+        //        Resuelto cuando: el updatedAt del PUT coincide con el del GET siguiente.
         return this.mapper.toDto(product);
     }
 
     // Delete
+    // OK [§4]: las tres escrituras con @Transactional y la lectura con readOnly = true, y
+    //     updateProduct se apoya en el dirty checking sin llamar a save(). Saber que ese save
+    //     sobra dentro de una transaccion es lo que separa Habilita de Explora en este eje.
     @Transactional
     public void deleteProduct(Long id){
         ProductEntity product = this.productRepository.findById(id)

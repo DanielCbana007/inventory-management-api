@@ -27,6 +27,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
+/**
+ * Leyenda de las marcas de revision: ver la cabecera de CategoryController.
+ * Apuntan a las notas de la revision 5 y el sufijo [§x] es su seccion.
+ */
 @RestController
 @RequestMapping("/api/v1/products")
 @Tag(name = "Products", description = "Create, read, replace and delete inventory products")
@@ -47,6 +51,8 @@ public class ProductController {
                     + "assigned by the database. The Location header points to its URL. "
                     + "The sku must be unique and categoryId must reference an existing category.",
             responses = {
+                    // MEJORA [§3.4]: el 201 devuelve una cabecera Location y aqui no se declara.
+                    //         Un generador de clientes lee el contrato, no la prosa.
                     @ApiResponse(responseCode = "201", description = "Product created",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = ProductDto.class))),
@@ -67,6 +73,12 @@ public class ProductController {
             @RequestBody @Valid ProductRequestDto requestDto) {
         ProductDto created = this.service.createProduct(requestDto);
 
+        // ERROR [§1.1]: esta Location apunta a una URL que responde 405, porque abajo no hay
+        //        ningun GET /{id}. Verificado en la revision 5:
+        //            POST /api/v1/products      -> 201  Location: .../products/112
+        //            GET  /api/v1/products/112  -> 405  "Method 'GET' is not supported."
+        //        La API dice donde vive el recurso creado y ese destino no se puede leer.
+        //        Resuelto cuando: seguir la Location de un POST recien hecho devuelve 200.
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(created.id())
@@ -85,9 +97,15 @@ public class ProductController {
                                     array = @ArraySchema(schema = @Schema(implementation = ProductDto.class))))
             }
     )
+    // MEJORA [§2.3]: sin paginacion. Aqui pesa mas que en Category: un catalogo crece sin
+    //         techo. Va DESPUES de los tests, porque cambia el contrato a Page<T>.
     public List<ProductDto> getAll() {
         return this.service.getAllProducts();
     }
+
+    // FALTA [§2.2]: no existe GET /{id}. Sin el faltan los 4 verbos del recurso de item y la
+    //        Location del POST es una promesa incumplida. 200 con el recurso, 404 con
+    //        ProblemDetail.
 
     @PutMapping("/{id}")
     @Operation(
@@ -107,6 +125,10 @@ public class ProductController {
                                     schema = @Schema(implementation = ProblemDetail.class)))
             }
     )
+    // FALTA [§2.1]: este controller no tiene ni un test. Hace falta un
+    //        @WebMvcTest(ProductController.class) con @MockitoBean ProdurctService y los 10
+    //        casos de CategoryControllerTest, mas 405 (verbo no soportado) y 400 (JSON
+    //        malformado), que alli tampoco estan.
     public ResponseEntity<ProductDto> update(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "New state of the product. The sku is ignored: it cannot be changed.")

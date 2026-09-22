@@ -29,15 +29,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CategoryController.class)
-// FALTA [§2.1]: faltan dos casos de la matriz que la API si cubre: 405 (verbo no soportado
-//        sobre la coleccion) y 400 por JSON malformado. Los dos vienen de
-//        ResponseEntityExceptionHandler, asi que el test protege que nadie lo desactive.
 class CategoryControllerTest {
     private static final String PATH = "/api/v1";
 
@@ -101,6 +99,19 @@ class CategoryControllerTest {
                     .andExpect(jsonPath("$.errors[0].field").value("name"))
                     .andExpect(jsonPath("$.errors[0].code").value("NotBlank"));
         }
+
+        @Test
+        @DisplayName("POST should return 400 when the JSON is malformed")
+        void createReturn400MalformedJson() throws Exception {
+            // Act & Assert
+            mockMvc.perform(post(PATH + "/categories")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"name\":\"ACTION\", "))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentType("application/problem+json"));
+
+            verify(service, never()).createCategory(any());
+        }
     }
 
     @Nested
@@ -125,6 +136,17 @@ class CategoryControllerTest {
                     .andExpect(jsonPath("$[0].id").value(1))
                     .andExpect(jsonPath("$[0].name").value("ACTION"))
                     .andExpect(jsonPath("$[1].name").value("ANIMATED"));
+        }
+
+        @Test
+        @DisplayName("PATCH on the collection should return 405")
+        void patchReturn405() throws Exception {
+            // Act & Assert
+            mockMvc.perform(patch(PATH + "/categories")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"name\":\"ACTION\",\"description\":\"Action\"}"))
+                    .andExpect(status().isMethodNotAllowed())
+                    .andExpect(content().contentType("application/problem+json"));
         }
     }
 

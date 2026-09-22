@@ -1,5 +1,6 @@
 package inventory.management.api.product.controller;
 
+import inventory.management.api.common.SortableFields;
 import inventory.management.api.product.dto.ProductDto;
 import inventory.management.api.product.dto.ProductRequestDto;
 import inventory.management.api.product.service.ProductService;
@@ -40,6 +41,8 @@ import java.net.URI;
 public class ProductController {
 
     private static final String PROBLEM_JSON = "application/problem+json";
+    private static final SortableFields SORTABLE =
+            SortableFields.of("id", "name", "sku", "price", "stock", "createdAt", "updatedAt");
 
     private final ProductService service;
 
@@ -88,18 +91,19 @@ public class ProductController {
     @Operation(
             summary = "Get products, paginated",
             description = "Returns one page of products with the category of each one. page is zero-based, "
-                    + "size defaults to 20 and is capped at 100, and the order is by id unless sort is given "
+                    + "size defaults to 20 and is capped at 100, and the order is by id unless sort is given. "
+                    + "Sortable fields: id, name, sku, price, stock, createdAt, updatedAt "
                     + "(e.g. sort=price,desc).",
             responses = {
                     @ApiResponse(responseCode = "200", description = "One page of products"),
-                    @ApiResponse(responseCode = "400", description = "sort names a property that does not exist",
+                    @ApiResponse(responseCode = "400", description = "sort names a field that is not sortable",
                             content = @Content(mediaType = PROBLEM_JSON,
                                     schema = @Schema(implementation = ProblemDetail.class)))
             }
     )
     public PagedModel<ProductDto> getAll(
             @ParameterObject @PageableDefault(size = 20, sort = "id") Pageable pageable) {
-        return new PagedModel<>(this.service.getAllProducts(pageable));
+        return new PagedModel<>(this.service.getAllProducts(SORTABLE.check(pageable)));
     }
 
     @GetMapping("/{id}")

@@ -125,10 +125,6 @@ public class ProductController {
                                     schema = @Schema(implementation = ProblemDetail.class)))
             }
     )
-    // FALTA [§2.1]: este controller no tiene ni un test. Hace falta un
-    //        @WebMvcTest(ProductController.class) con @MockitoBean ProductService y los 10
-    //        casos de CategoryControllerTest, mas 405 (verbo no soportado) y 400 (JSON
-    //        malformado), que alli tampoco estan.
     public ResponseEntity<ProductDto> update(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "New state of the product. The sku is ignored: it cannot be changed.")

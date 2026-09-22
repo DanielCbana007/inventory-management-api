@@ -2,7 +2,7 @@ package inventory.management.api.product.controller;
 
 import inventory.management.api.product.dto.ProductDto;
 import inventory.management.api.product.dto.ProductRequestDto;
-import inventory.management.api.product.service.ProdurctService;
+import inventory.management.api.product.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -27,6 +27,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
+/**
+ * Leyenda de las marcas de revision: ver la cabecera de CategoryController.
+ * Apuntan a las notas de la revision 5 y el sufijo [§x] es su seccion.
+ */
 @RestController
 @RequestMapping("/api/v1/products")
 @Tag(name = "Products", description = "Create, read, replace and delete inventory products")
@@ -34,9 +38,9 @@ public class ProductController {
 
     private static final String PROBLEM_JSON = "application/problem+json";
 
-    private final ProdurctService service;
+    private final ProductService service;
 
-    public ProductController(ProdurctService service) {
+    public ProductController(ProductService service) {
         this.service = service;
     }
 
@@ -47,6 +51,8 @@ public class ProductController {
                     + "assigned by the database. The Location header points to its URL. "
                     + "The sku must be unique and categoryId must reference an existing category.",
             responses = {
+                    // MEJORA [§3.4]: el 201 devuelve una cabecera Location y aqui no se declara.
+                    //         Un generador de clientes lee el contrato, no la prosa.
                     @ApiResponse(responseCode = "201", description = "Product created",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = ProductDto.class))),
@@ -85,8 +91,34 @@ public class ProductController {
                                     array = @ArraySchema(schema = @Schema(implementation = ProductDto.class))))
             }
     )
+    // MEJORA [§2.3]: sin paginacion. Aqui pesa mas que en Category: un catalogo crece sin
+    //         techo. Va DESPUES de los tests, porque cambia el contrato a Page<T>.
     public List<ProductDto> getAll() {
         return this.service.getAllProducts();
+    }
+
+    @GetMapping("/{id}")
+    @Operation(
+            summary = "Get product by ID",
+            description = "Returns a single product with its category. This is the URL the Location "
+                    + "header of a POST points to.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Product found",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ProductDto.class))),
+                    @ApiResponse(responseCode = "400", description = "The id is not a valid number",
+                            content = @Content(mediaType = PROBLEM_JSON,
+                                    schema = @Schema(implementation = ProblemDetail.class))),
+                    @ApiResponse(responseCode = "404", description = "No product exists with that id",
+                            content = @Content(mediaType = PROBLEM_JSON,
+                                    schema = @Schema(implementation = ProblemDetail.class)))
+            }
+    )
+    public ProductDto getById(
+            @Parameter(name = "id", description = "Id of the product to get",
+                    example = "3", required = true)
+            @PathVariable Long id) {
+        return this.service.getProductById(id);
     }
 
     @PutMapping("/{id}")

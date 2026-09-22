@@ -20,6 +20,19 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
+/**
+ * Marcas de revision. Apuntan a las notas de la revision 5; el sufijo [§x] es la
+ * seccion donde esta el porque largo.
+ *
+ *   BLOQUEANTE  impide cerrar la revision. Maxima prioridad.
+ *   ERROR       comportamiento incorrecto en el codigo que ya existe.
+ *   FALTA       alcance previsto que aun no se ha abordado.
+ *   MEJORA      no bloquea; es lo que separa Competente de Experto en la escala.
+ *   OK          esta bien hecho y se defiende en entrevista. No lo toques.
+ *
+ * Regla: cada marca se borra en el MISMO commit que resuelve lo que describe. Una marca
+ * que describe un defecto ya corregido miente, y quien lea el archivo se la cree.
+ */
 @RestController
 @RequestMapping("/api/v1/categories")
 @Tag(name = "Categories", description = "Create, read, replace and delete inventory categories")
@@ -35,6 +48,9 @@ public class CategoryController {
             summary = "Create category",
             description = "Registers a new category and returns the created resource with the id assigned by the database. The Location header points to its URL. The name must be unique.",
             responses = {
+                    // MEJORA [§3.4]: el 201 devuelve una cabecera Location y aqui no se declara.
+                    //         Un generador de clientes lee el contrato, no la prosa de la
+                    //         descripcion, asi que el cliente generado la ignora.
                     @ApiResponse(responseCode = "201", description = "Category created",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = CategoryDto.class))),
@@ -70,12 +86,34 @@ public class CategoryController {
                                     array = @ArraySchema(schema = @Schema(implementation = CategoryDto.class)))),
             }
     )
-    // MEJORA [§2.4]: sin paginacion; devuelve la tabla entera. Con Category (decenas de
-    //        filas) es YAGNI; hazlo con Product, donde los miles de filas son lo normal.
-    //        Ojo al orden: cambia el contrato de List<T> a Page<T>, asi que hacerlo despues
-    //        de anotar OpenAPI y de escribir los tests obliga a rehacer los dos.
+    // MEJORA [§2.3]: sin paginacion; devuelve la tabla entera. Cambia el contrato de
+    //         List<T> a Page<T>, asi que va DESPUES de los tests: hacerlo antes obliga a
+    //         reescribirlos.
     public List<CategoryDto> getAll() {
         return this.categoryService.getAllCategories();
+    }
+
+    @GetMapping("/{id}")
+    @Operation(
+            summary = "Get category by ID",
+            description = "Returns a single category. This is the URL the Location header of a POST points to.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Category found",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = CategoryDto.class))),
+                    @ApiResponse(responseCode = "400", description = "The id is not a valid number",
+                            content = @Content(mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetail.class))),
+                    @ApiResponse(responseCode = "404", description = "No category exists with that id",
+                            content = @Content(mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetail.class)))
+            }
+    )
+    public CategoryDto getById(
+            @Parameter(name = "id", description = "Id of the category to get",
+                    example = "3", required = true)
+            @PathVariable Long id) {
+        return this.categoryService.getCategoryById(id);
     }
 
     @PutMapping("/{id}")

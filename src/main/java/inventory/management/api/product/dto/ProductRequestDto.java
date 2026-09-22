@@ -25,6 +25,8 @@ public record ProductRequestDto(
         @Schema(description = "Stock keeping unit. Must be unique across the catalogue.",
                 example = "LOG-K380-ES")
         @NotBlank @Size(min = 1, max = 50)
+        // MEJORA [§3.3]: obligatorio aqui, ignorado por updateWith en el PUT. Ver la nota de
+        //         ProductEntity.updateWith.
         String sku,
 
         @Schema(description = "Unit price in the catalogue currency. Cannot be negative.",
@@ -40,6 +42,9 @@ public record ProductRequestDto(
         @Schema(description = "Id of an existing category this product belongs to.",
                 example = "3")
         @NotNull
+        // OK [§4]: solo el id. El cliente REFERENCIA una categoria que ya existe, no la crea
+        //     ni la modifica. Aceptar aqui una CategoryEntity o un CategoryDto completo seria
+        //     mass assignment sobre la tabla de categorias desde el endpoint de productos.
         Long categoryId
 ) {
 }

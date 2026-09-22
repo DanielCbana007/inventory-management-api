@@ -5,6 +5,7 @@ import inventory.management.api.category.dto.CategoryRequestDto;
 import inventory.management.api.category.entity.CategoryEntity;
 import inventory.management.api.category.mapper.CategoryMapper;
 import inventory.management.api.category.repository.CategoryRepository;
+import inventory.management.api.exception.CusEntityAlreadyExistsException;
 import inventory.management.api.exception.CusEntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -73,9 +75,10 @@ class CategoryServiceTest {
         when(repository.existsByName("ACTION")).thenReturn(true);
 
         // Act & Assert
-        assertThrows(inventory.management.api.exception.CusEntityAlreadyExistsException.class,
+        CusEntityAlreadyExistsException ex = assertThrows(CusEntityAlreadyExistsException.class,
                 () -> service.createCategory(requestDto));
 
+        assertTrue(ex.getMessage().contains("name 'ACTION'"));
         verify(repository, never()).save(any(CategoryEntity.class));
     }
 
@@ -98,6 +101,39 @@ class CategoryServiceTest {
         assertEquals("ACTION", result.get(0).name());
         assertEquals("Action.", result.get(0).description());
         assertEquals("ANIMATED", result.get(1).name());
+    }
+
+    @Nested
+    @DisplayName("getCategoryById")
+    class GetCategoryById {
+
+        @Test
+        @DisplayName("Should return the DTO of the category found.")
+        void getCategoryByIdOk() {
+            // Arrange
+            CategoryEntity entity = new CategoryEntity("ACTION", "Action.");
+            ReflectionTestUtils.setField(entity, "id", 1L);
+
+            when(repository.findById(1L)).thenReturn(Optional.of(entity));
+
+            // Act
+            CategoryDto result = service.getCategoryById(1L);
+
+            // Assert
+            assertEquals(1L, result.id());
+            assertEquals("ACTION", result.name());
+        }
+
+        @Test
+        @DisplayName("Should throw CusEntityNotFoundException when the id does not exist.")
+        void getCategoryByIdNotFound() {
+            // Arrange
+            when(repository.findById(99L)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThrows(CusEntityNotFoundException.class,
+                    () -> service.getCategoryById(99L));
+        }
     }
 
     @Nested

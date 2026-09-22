@@ -32,8 +32,8 @@ class CategoryMapperTest {
 
             // Assert
             assertNotNull(result);
-            assertEquals("ACTION", entity.getName());
-            assertEquals("Action", entity.getDescription());
+            assertEquals("ACTION", result.name());
+            assertEquals("Action", result.description());
         }
 
     }

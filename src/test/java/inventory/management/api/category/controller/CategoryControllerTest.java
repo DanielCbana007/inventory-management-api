@@ -29,6 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -76,7 +77,7 @@ class CategoryControllerTest {
         void createReturn409() throws Exception {
             // Arrange
             when(service.createCategory(any(CategoryRequestDto.class)))
-                    .thenThrow(CusEntityAlreadyExistsException.of("Category", "ACTION"));
+                    .thenThrow(CusEntityAlreadyExistsException.of("Category", "name", "ACTION"));
 
             // Act & Assert
             mockMvc.perform(post(PATH + "/categories")
@@ -97,6 +98,19 @@ class CategoryControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.errors[0].field").value("name"))
                     .andExpect(jsonPath("$.errors[0].code").value("NotBlank"));
+        }
+
+        @Test
+        @DisplayName("POST should return 400 when the JSON is malformed")
+        void createReturn400MalformedJson() throws Exception {
+            // Act & Assert
+            mockMvc.perform(post(PATH + "/categories")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"name\":\"ACTION\", "))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentType("application/problem+json"));
+
+            verify(service, never()).createCategory(any());
         }
     }
 
@@ -122,6 +136,60 @@ class CategoryControllerTest {
                     .andExpect(jsonPath("$[0].id").value(1))
                     .andExpect(jsonPath("$[0].name").value("ACTION"))
                     .andExpect(jsonPath("$[1].name").value("ANIMATED"));
+        }
+
+        @Test
+        @DisplayName("PATCH on the collection should return 405")
+        void patchReturn405() throws Exception {
+            // Act & Assert
+            mockMvc.perform(patch(PATH + "/categories")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"name\":\"ACTION\",\"description\":\"Action\"}"))
+                    .andExpect(status().isMethodNotAllowed())
+                    .andExpect(content().contentType("application/problem+json"));
+        }
+    }
+
+    @Nested
+    @DisplayName("getById")
+    class GetById {
+
+        @Test
+        @DisplayName("GET /{id} should return 200 with the category")
+        void getByIdReturn200() throws Exception {
+            // Arrange
+            when(service.getCategoryById(1L)).thenReturn(new CategoryDto(1L, "ACTION", "Action."));
+
+            // Act & Assert
+            mockMvc.perform(get(PATH + "/categories/1"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.id").value(1))
+                    .andExpect(jsonPath("$.name").value("ACTION"));
+        }
+
+        @Test
+        @DisplayName("GET /{id} should return 404 when the category does not exist")
+        void getByIdReturn404() throws Exception {
+            // Arrange
+            when(service.getCategoryById(99L)).thenThrow(CusEntityNotFoundException.of("Category", 99L));
+
+            // Act & Assert
+            mockMvc.perform(get(PATH + "/categories/99"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(content().contentType("application/problem+json"))
+                    .andExpect(jsonPath("$.detail").value(containsString("99")));
+        }
+
+        @Test
+        @DisplayName("GET /{id} should return 400 when the id is not a valid number")
+        void getByIdReturn400() throws Exception {
+            // Act & Assert
+            mockMvc.perform(get(PATH + "/categories/abc"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentType("application/problem+json"));
+
+            verify(service, never()).getCategoryById(any());
         }
     }
 

@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - README with how to run the API locally and the list of endpoints.
+- Contribution guide, issue templates (feedback, bug report, port to another language) and a
+  pull request template.
+- The OpenAPI contract of 1.0.0 in `docs/openapi/v1.0.0.json`, to build the API in other languages.
 
 ## [1.0.0] - 2026-09-22
 

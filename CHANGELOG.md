@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- README with how to run the API locally and the list of endpoints.
+
 ## [1.0.0] - 2026-09-22
 
 First release: the inventory REST API, without authentication.
@@ -26,4 +32,5 @@ First release: the inventory REST API, without authentication.
 - `dev` and `prod` profiles, with the database credentials read from `.env` or the environment.
 - Unit tests for services, controllers and mappers (JUnit 5, Mockito, MockMvc).
 
+[Unreleased]: https://github.com/DanielCbana007/inventory-management-api/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/DanielCbana007/inventory-management-api/releases/tag/v1.0.0

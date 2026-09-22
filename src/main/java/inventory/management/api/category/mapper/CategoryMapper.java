@@ -5,8 +5,6 @@ import inventory.management.api.category.dto.CategoryRequestDto;
 import inventory.management.api.category.entity.CategoryEntity;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 @Component
 public class CategoryMapper {
     public CategoryDto toDto(CategoryEntity entity){
@@ -15,10 +13,6 @@ public class CategoryMapper {
                 entity.getName(),
                 entity.getDescription()
         );
-    }
-
-    public List<CategoryDto> toDtoAll(List<CategoryEntity> entities){
-        return entities.stream().map(this::toDto).toList();
     }
 
     public CategoryEntity toEntity(CategoryRequestDto requestDto){

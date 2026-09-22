@@ -30,7 +30,7 @@ public class ProductService {
     @Transactional
     public ProductDto createProduct(ProductRequestDto requestDto){
         if (this.productRepository.existsBySku(requestDto.sku())){
-            throw CusEntityAlreadyExistsException.of("Product", requestDto.sku());
+            throw CusEntityAlreadyExistsException.of("Product", "sku", requestDto.sku());
         }
 
         // OK [§4]: la categoria se RESUELVE por id contra la base, no se acepta del cliente.

@@ -89,7 +89,7 @@ class ProductControllerTest {
         void createReturn409() throws Exception {
             // Arrange
             when(service.createProduct(any(ProductRequestDto.class)))
-                    .thenThrow(CusEntityAlreadyExistsException.of("Product", "LOG-K380"));
+                    .thenThrow(CusEntityAlreadyExistsException.of("Product", "sku", "LOG-K380"));
 
             // Act & Assert
             mockMvc.perform(post(PATH)

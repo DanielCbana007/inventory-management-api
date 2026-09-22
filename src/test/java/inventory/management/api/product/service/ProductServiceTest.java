@@ -26,6 +26,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -98,9 +99,10 @@ class ProductServiceTest {
             when(productRepository.existsBySku("LOG-K380")).thenReturn(true);
 
             // Act & Assert
-            assertThrows(CusEntityAlreadyExistsException.class,
+            CusEntityAlreadyExistsException ex = assertThrows(CusEntityAlreadyExistsException.class,
                     () -> service.createProduct(request(1L)));
 
+            assertTrue(ex.getMessage().contains("sku 'LOG-K380'"));
             verify(productRepository, never()).save(any(ProductEntity.class));
         }
 

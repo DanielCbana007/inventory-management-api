@@ -77,7 +77,7 @@ class CategoryControllerTest {
         void createReturn409() throws Exception {
             // Arrange
             when(service.createCategory(any(CategoryRequestDto.class)))
-                    .thenThrow(CusEntityAlreadyExistsException.of("Category", "ACTION"));
+                    .thenThrow(CusEntityAlreadyExistsException.of("Category", "name", "ACTION"));
 
             // Act & Assert
             mockMvc.perform(post(PATH + "/categories")

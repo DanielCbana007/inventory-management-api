@@ -44,11 +44,6 @@ public class ProductService {
     }
 
     // Read
-    // MEJORA [§3.1]: N+1 medido, no supuesto. 19 productos -> 5 SELECT (1 sobre tbl_product
-    //         y 1 por cada categoria distinta). Son 5 y no 20 solo porque hay 4 categorias y
-    //         la cache de la sesion deduplica; con 500 productos en 80 categorias son 81
-    //         consultas para pintar una lista. El fetch = LAZY es correcto y NO es la causa:
-    //         falta pedir la categoria de golpe con @EntityGraph en el repositorio.
     @Transactional(readOnly = true)
     public List<ProductDto> getAllProducts(){
         List<ProductEntity> listProduct = this.productRepository.findAll();

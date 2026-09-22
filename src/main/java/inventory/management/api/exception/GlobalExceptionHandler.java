@@ -36,6 +36,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler(CusEntityConflictException.class)
+    public ProblemDetail handleConflict(CusEntityConflictException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
     // ---------- red de seguridad de la base de datos ----------
 
     @ExceptionHandler(DataIntegrityViolationException.class)

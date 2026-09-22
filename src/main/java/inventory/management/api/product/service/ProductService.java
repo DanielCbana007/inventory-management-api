@@ -3,6 +3,7 @@ package inventory.management.api.product.service;
 import inventory.management.api.category.entity.CategoryEntity;
 import inventory.management.api.category.repository.CategoryRepository;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
+import inventory.management.api.exception.CusEntityConflictException;
 import inventory.management.api.exception.CusEntityNotFoundException;
 import inventory.management.api.product.repository.ProductRepository;
 import inventory.management.api.product.dto.ProductDto;
@@ -65,6 +66,9 @@ public class ProductService {
     public ProductDto updateProduct(ProductRequestDto requestDto, Long id){
         ProductEntity product = this.productRepository.findById(id)
                 .orElseThrow(() -> CusEntityNotFoundException.of("Product", id));
+        if (!product.getSku().equals(requestDto.sku())) {
+            throw CusEntityConflictException.immutableField("Product", "sku", product.getSku(), requestDto.sku());
+        }
         CategoryEntity category = this.categoryRepository.findById(requestDto.categoryId())
                 .orElseThrow(() -> CusEntityNotFoundException.of("Category", requestDto.categoryId()));
 

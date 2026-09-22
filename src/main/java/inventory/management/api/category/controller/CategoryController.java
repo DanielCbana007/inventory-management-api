@@ -66,14 +66,6 @@ public class CategoryController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Specify how you want to create the category")
             @RequestBody @Valid CategoryRequestDto requestDto) {
         CategoryDto created = this.categoryService.createCategory(requestDto);
-        // ERROR [§1.1]: esta Location apunta a una URL que responde 405, porque abajo no hay
-        //        ningun GET /{id}. Verificado en la revision 5:
-        //            POST /api/v1/categories      -> 201  Location: .../categories/276
-        //            GET  /api/v1/categories/276  -> 405  "Method 'GET' is not supported."
-        //        RFC 9110 10.2.2: Location es la URI del recurso creado. El cliente que la
-        //        siga -que es justo para lo que esta- se rompe.
-        //        Resuelto cuando: seguir la Location de un POST recien hecho devuelve 200
-        //        con el recurso.
         // Se construye desde la peticion actual: evita duplicar la ruta y las URLs mal
         // formadas al concatenar a mano.
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -101,10 +93,28 @@ public class CategoryController {
         return this.categoryService.getAllCategories();
     }
 
-    // FALTA [§2.2]: no existe GET /{id}. Sin el, el recurso de item solo tiene 3 de los 4
-    //        verbos y la Location del POST no se puede seguir. Es requisito de nivel junior
-    //        evaluada directamente. Debe responder 200 con el recurso y 404 con
-    //        ProblemDetail, y llevar su @Operation como los demas.
+    @GetMapping("/{id}")
+    @Operation(
+            summary = "Get category by ID",
+            description = "Returns a single category. This is the URL the Location header of a POST points to.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Category found",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = CategoryDto.class))),
+                    @ApiResponse(responseCode = "400", description = "The id is not a valid number",
+                            content = @Content(mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetail.class))),
+                    @ApiResponse(responseCode = "404", description = "No category exists with that id",
+                            content = @Content(mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetail.class)))
+            }
+    )
+    public CategoryDto getById(
+            @Parameter(name = "id", description = "Id of the category to get",
+                    example = "3", required = true)
+            @PathVariable Long id) {
+        return this.categoryService.getCategoryById(id);
+    }
 
     @PutMapping("/{id}")
     @Operation(

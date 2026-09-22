@@ -101,6 +101,39 @@ class CategoryServiceTest {
     }
 
     @Nested
+    @DisplayName("getCategoryById")
+    class GetCategoryById {
+
+        @Test
+        @DisplayName("Should return the DTO of the category found.")
+        void getCategoryByIdOk() {
+            // Arrange
+            CategoryEntity entity = new CategoryEntity("ACTION", "Action.");
+            ReflectionTestUtils.setField(entity, "id", 1L);
+
+            when(repository.findById(1L)).thenReturn(Optional.of(entity));
+
+            // Act
+            CategoryDto result = service.getCategoryById(1L);
+
+            // Assert
+            assertEquals(1L, result.id());
+            assertEquals("ACTION", result.name());
+        }
+
+        @Test
+        @DisplayName("Should throw CusEntityNotFoundException when the id does not exist.")
+        void getCategoryByIdNotFound() {
+            // Arrange
+            when(repository.findById(99L)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThrows(CusEntityNotFoundException.class,
+                    () -> service.getCategoryById(99L));
+        }
+    }
+
+    @Nested
     @DisplayName("updateCategory")
     class UpdateCategory {
 

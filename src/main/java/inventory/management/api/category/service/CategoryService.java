@@ -6,6 +6,7 @@ import inventory.management.api.category.entity.CategoryEntity;
 import inventory.management.api.category.mapper.CategoryMapper;
 import inventory.management.api.category.repository.CategoryRepository;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
+import inventory.management.api.exception.CusEntityConflictException;
 import inventory.management.api.exception.CusEntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,6 +73,9 @@ public class CategoryService {
     public void deleteCategory(Long id) {
         CategoryEntity category = this.categoryRepository.findById(id)
                 .orElseThrow(() -> CusEntityNotFoundException.of(ENTITY_NAME, id));
+        if (this.categoryRepository.existsByIdAndProductsIsNotEmpty(id)) {
+            throw CusEntityConflictException.hasDependents(ENTITY_NAME, id, "products");
+        }
 
         this.categoryRepository.delete(category);
     }

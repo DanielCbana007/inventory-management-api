@@ -150,7 +150,8 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Delete category",
-            description = "Deletes the given category. Returns no body.",
+            description = "Deletes the given category. Returns no body. A category that still has "
+                    + "products cannot be deleted: move or delete its products first.",
             responses = {
                     @ApiResponse(responseCode = "204", description = "Category deleted",
                             content = @Content),
@@ -158,6 +159,9 @@ public class CategoryController {
                             content = @Content(mediaType = "application/problem+json",
                                     schema = @Schema(implementation = ProblemDetail.class))),
                     @ApiResponse(responseCode = "404", description = "No category exists with that id",
+                            content = @Content(mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetail.class))),
+                    @ApiResponse(responseCode = "409", description = "The category still has products",
                             content = @Content(mediaType = "application/problem+json",
                                     schema = @Schema(implementation = ProblemDetail.class)))
             }

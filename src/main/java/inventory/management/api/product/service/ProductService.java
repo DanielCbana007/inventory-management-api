@@ -81,13 +81,8 @@ public class ProductService {
                 category
         );
 
-        // ERROR [§1.2]: este toDto corre ANTES del flush, y @UpdateTimestamp escribe updatedAt
-        //        EN el flush. La respuesta del PUT sale con el updatedAt viejo. Verificado:
-        //            PUT  /api/v1/products/112 -> 200  "updatedAt":"2026-09-04T18:32:15" (creacion)
-        //            GET  /api/v1/products     -> 200  "updatedAt":"2026-09-04T18:32:47" (real)
-        //        La base queda bien; la respuesta miente. Un cliente que use updatedAt para
-        //        cache o concurrencia optimista se equivoca en todos los PUT.
-        //        Resuelto cuando: el updatedAt del PUT coincide con el del GET siguiente.
+        this.productRepository.flush();
+
         return this.mapper.toDto(product);
     }
 

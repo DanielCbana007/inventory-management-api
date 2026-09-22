@@ -55,6 +55,16 @@ public class ProductService {
         return this.mapper.toDtoAll(listProduct);
     }
 
+    // readOnly no es solo estilo: category es LAZY y open-in-view=false, asi que el toDto
+    // tiene que correr dentro de la transaccion o getCategory().getName() lanza
+    // LazyInitializationException.
+    @Transactional(readOnly = true)
+    public ProductDto getProductById(Long id){
+        ProductEntity product = this.productRepository.findById(id)
+                .orElseThrow(() -> CusEntityNotFoundException.of("Product", id));
+        return this.mapper.toDto(product);
+    }
+
     // Update
     @Transactional
     public ProductDto updateProduct(ProductRequestDto requestDto, Long id){

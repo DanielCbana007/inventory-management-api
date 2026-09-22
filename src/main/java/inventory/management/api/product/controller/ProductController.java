@@ -6,12 +6,15 @@ import inventory.management.api.product.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +29,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 
 /**
  * Leyenda de las marcas de auditoria: ver la cabecera de CategoryController.
@@ -84,18 +86,20 @@ public class ProductController {
 
     @GetMapping
     @Operation(
-            summary = "Get all products",
-            description = "Returns the whole catalogue with the category of each product. Not paginated yet.",
+            summary = "Get products, paginated",
+            description = "Returns one page of products with the category of each one. page is zero-based, "
+                    + "size defaults to 20 and is capped at 100, and the order is by id unless sort is given "
+                    + "(e.g. sort=price,desc).",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "List of products",
-                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    array = @ArraySchema(schema = @Schema(implementation = ProductDto.class))))
+                    @ApiResponse(responseCode = "200", description = "One page of products"),
+                    @ApiResponse(responseCode = "400", description = "sort names a property that does not exist",
+                            content = @Content(mediaType = PROBLEM_JSON,
+                                    schema = @Schema(implementation = ProblemDetail.class)))
             }
     )
-    // MEJORA [§2.3]: sin paginacion. Aqui pesa mas que en Category: un catalogo crece sin
-    //         techo. Va DESPUES de los tests, porque cambia el contrato a Page<T>.
-    public List<ProductDto> getAll() {
-        return this.service.getAllProducts();
+    public PagedModel<ProductDto> getAll(
+            @ParameterObject @PageableDefault(size = 20, sort = "id") Pageable pageable) {
+        return new PagedModel<>(this.service.getAllProducts(pageable));
     }
 
     @GetMapping("/{id}")

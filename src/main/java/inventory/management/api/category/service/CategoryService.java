@@ -8,10 +8,11 @@ import inventory.management.api.category.repository.CategoryRepository;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
 import inventory.management.api.exception.CusEntityConflictException;
 import inventory.management.api.exception.CusEntityNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 
 @Service
 public class CategoryService {
@@ -40,11 +41,9 @@ public class CategoryService {
         return  this.mapper.toDto(this.categoryRepository.save(newCategory));
     }
 
-    // MEJORA [§2.3]: findAll() sin Pageable trae la tabla entera. Ver la nota del controller.
     @Transactional(readOnly = true)
-    public List<CategoryDto> getAllCategories() {
-        List<CategoryEntity> listCategories = this.categoryRepository.findAll();
-        return this.mapper.toDtoAll(listCategories);
+    public Page<CategoryDto> getAllCategories(Pageable pageable) {
+        return this.categoryRepository.findAll(pageable).map(this.mapper::toDto);
     }
 
     @Transactional(readOnly = true)

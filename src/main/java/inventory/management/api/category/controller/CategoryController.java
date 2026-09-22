@@ -6,12 +6,15 @@ import inventory.management.api.category.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 
 /**
  * Marcas de auditoria. Apuntan a docs/seguimiento/auditoria-5.md; el sufijo [§x] es la
@@ -78,19 +80,21 @@ public class CategoryController {
 
     @GetMapping
     @Operation(
-            summary = "Get all categories",
-            description = "Returns the whole catalogue. Not paginated yet.",
+            summary = "Get categories, paginated",
+            description = "Returns one page of categories. page is zero-based, size defaults to 20 and "
+                    + "is capped at 100, and the order is by id unless sort is given (e.g. sort=name,desc).",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "List of categories",
-                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    array = @ArraySchema(schema = @Schema(implementation = CategoryDto.class)))),
+                    @ApiResponse(responseCode = "200", description = "One page of categories"),
+                    @ApiResponse(responseCode = "400", description = "sort names a property that does not exist",
+                            content = @Content(mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetail.class)))
             }
     )
-    // MEJORA [§2.3]: sin paginacion; devuelve la tabla entera. Cambia el contrato de
-    //         List<T> a Page<T>, asi que va DESPUES de los tests: hacerlo antes obliga a
-    //         reescribirlos.
-    public List<CategoryDto> getAll() {
-        return this.categoryService.getAllCategories();
+    // sort = "id" por defecto: sin ORDER BY, Postgres no garantiza el orden y la misma fila
+    // podria salir en dos paginas o en ninguna.
+    public PagedModel<CategoryDto> getAll(
+            @ParameterObject @PageableDefault(size = 20, sort = "id") Pageable pageable) {
+        return new PagedModel<>(this.categoryService.getAllCategories(pageable));
     }
 
     @GetMapping("/{id}")

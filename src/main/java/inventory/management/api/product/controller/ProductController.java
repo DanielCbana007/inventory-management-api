@@ -5,6 +5,7 @@ import inventory.management.api.product.dto.ProductRequestDto;
 import inventory.management.api.product.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -51,9 +52,9 @@ public class ProductController {
                     + "assigned by the database. The Location header points to its URL. "
                     + "The sku must be unique and categoryId must reference an existing category.",
             responses = {
-                    // MEJORA [§3.4]: el 201 devuelve una cabecera Location y aqui no se declara.
-                    //         Un generador de clientes lee el contrato, no la prosa.
                     @ApiResponse(responseCode = "201", description = "Product created",
+                            headers = @Header(name = "Location", description = "URL of the created product",
+                                    schema = @Schema(type = "string", format = "uri")),
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = ProductDto.class))),
                     @ApiResponse(responseCode = "400", description = "Invalid payload: a required field is missing, the name or sku length is out of range, or price or stock is negative",

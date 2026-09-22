@@ -5,6 +5,7 @@ import inventory.management.api.category.dto.CategoryRequestDto;
 import inventory.management.api.category.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -48,10 +49,9 @@ public class CategoryController {
             summary = "Create category",
             description = "Registers a new category and returns the created resource with the id assigned by the database. The Location header points to its URL. The name must be unique.",
             responses = {
-                    // MEJORA [§3.4]: el 201 devuelve una cabecera Location y aqui no se declara.
-                    //         Un generador de clientes lee el contrato, no la prosa de la
-                    //         descripcion, asi que el cliente generado la ignora.
                     @ApiResponse(responseCode = "201", description = "Category created",
+                            headers = @Header(name = "Location", description = "URL of the created category",
+                                    schema = @Schema(type = "string", format = "uri")),
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = CategoryDto.class))),
                     @ApiResponse(responseCode = "409", description = "A category with that name already exists",

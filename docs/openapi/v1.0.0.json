@@ -1,0 +1,895 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Inventory Management API",
+    "description": "REST API for inventory management.\n\nErrors are returned as **RFC 9457 (Problem Details)** with\n`type`, `title`, `status` and `detail`. Validation responses add\nan `errors` property holding one object per field with `field`,\n`code` and `message`.\n\n`code` is stable (`NotBlank`, `Size`); `message` changes with the\n`Accept-Language` header, so clients must not branch on it.",
+    "contact": {
+      "name": "Daniel Andres Cabana Trejos",
+      "url": "https://github.com/DanielCbana007"
+    },
+    "license": {
+      "name": "MIT License",
+      "url": "https://opensource.org/licenses/MIT"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local environment (dev profile)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Categories",
+      "description": "Create, read, replace and delete inventory categories"
+    },
+    {
+      "name": "Products",
+      "description": "Create, read, replace and delete inventory products"
+    }
+  ],
+  "paths": {
+    "/api/v1/products/{id}": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Get product by ID",
+        "description": "Returns a single product with its category. This is the URL the Location header of a POST points to.",
+        "operationId": "getById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the product to get",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 3
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The id is not a valid number",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No product exists with that id",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Update product by ID",
+        "description": "Replaces the product as a whole. This is a PUT, not a PATCH: fields you do not send are set to null, they do not keep their previous value. The sku cannot be changed: send the current one, or the request is rejected with 409.",
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the product to replace",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 3
+          }
+        ],
+        "requestBody": {
+          "description": "New state of the product. The sku must match the stored one.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Product updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, or the id is not a number",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No product exists with that id, or no category exists with the given categoryId",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The sku sent differs from the stored one: it cannot be changed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Delete product",
+        "description": "Deletes the given product. Returns no body.",
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the product to delete",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 3
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Product deleted"
+          },
+          "400": {
+            "description": "The id is not a valid number",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No product exists with that id",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/categories/{id}": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Get category by ID",
+        "description": "Returns a single category. This is the URL the Location header of a POST points to.",
+        "operationId": "getById_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the category to get",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 3
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The id is not a valid number",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No category exists with that id",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Update category by ID",
+        "description": "Replaces the category as a whole. This is a PUT, not a PATCH: fields you do not send are set to null, they do not keep their previous value.",
+        "operationId": "update_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the category to replace",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 3
+          }
+        ],
+        "requestBody": {
+          "description": "Specify which values you want to update.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Category updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The name is invalid or the id is not a number",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No category exists with that id",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Delete category",
+        "description": "Deletes the given category. Returns no body. A category that still has products cannot be deleted: move or delete its products first.",
+        "operationId": "delete_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the category to delete",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 3
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Category deleted"
+          },
+          "400": {
+            "description": "The id is not a valid number",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No category exists with that id",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The category still has products",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Get products, paginated",
+        "description": "Returns one page of products with the category of each one. page is zero-based, size defaults to 20 and is capped at 100, and the order is by id unless sort is given. Sortable fields: id, name, sku, price, stock, createdAt, updatedAt (e.g. sort=price,desc).",
+        "operationId": "getAll",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page index (0..N)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The size of the page to be returned",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "default": [
+                "id,ASC"
+              ],
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedModelProduct"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "sort names a field that is not sortable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Create product",
+        "description": "Registers a new product and returns the created resource with the id assigned by the database. The Location header points to its URL. The sku must be unique and categoryId must reference an existing category.",
+        "operationId": "create",
+        "requestBody": {
+          "description": "Product to create. The id, createdAt and updatedAt fields are assigned by the server.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Product created",
+            "headers": {
+              "Location": {
+                "description": "URL of the created product",
+                "style": "simple",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload: a required field is missing, the name or sku length is out of range, or price or stock is negative",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No category exists with the given categoryId",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A product with that sku already exists",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/categories": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Get categories, paginated",
+        "description": "Returns one page of categories. page is zero-based, size defaults to 20 and is capped at 100, and the order is by id unless sort is given (e.g. sort=name,desc). Sortable fields: id, name.",
+        "operationId": "getAll_1",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page index (0..N)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The size of the page to be returned",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "default": [
+                "id,ASC"
+              ],
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedModelCategory"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "sort names a field that is not sortable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Create category",
+        "description": "Registers a new category and returns the created resource with the id assigned by the database. The Location header points to its URL. The name must be unique.",
+        "operationId": "create_1",
+        "requestBody": {
+          "description": "Specify how you want to create the category",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Category created",
+            "headers": {
+              "Location": {
+                "description": "URL of the created category",
+                "style": "simple",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A category with that name already exists",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The name is missing, blank or longer than 100 characters",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Category": {
+        "type": "object",
+        "description": "A category as returned by the API",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Identifier assigned by the database.",
+            "example": 1,
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Unique name of the category.",
+            "example": "Electronics"
+          },
+          "description": {
+            "type": "string",
+            "description": "Free text explaining what the category groups.",
+            "example": "Electronic devices and gadgets"
+          }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "description": "A product as returned by the API",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Identifier assigned by the database.",
+            "example": 1,
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Commercial name of the product.",
+            "example": "Wireless keyboard K380"
+          },
+          "description": {
+            "type": "string",
+            "description": "Free-text description of the product.",
+            "example": "Bluetooth keyboard, multi-device, Spanish layout"
+          },
+          "sku": {
+            "type": "string",
+            "description": "Stock keeping unit. Unique across the catalogue and never changes once created.",
+            "example": "LOG-K380-ES"
+          },
+          "price": {
+            "type": "number",
+            "description": "Unit price in the catalogue currency. Never negative.",
+            "example": 39.9
+          },
+          "stock": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Units currently available. Zero means out of stock, never negative.",
+            "example": 120
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the product was created. Set by the server.",
+            "example": "2026-09-04T10:15:30",
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the product was last modified. Set by the server on every update.",
+            "example": "2026-09-04T18:42:07",
+            "readOnly": true
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category",
+            "description": "Category this product belongs to."
+          }
+        }
+      },
+      "ProblemDetail": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "format": "uri"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        }
+      },
+      "ProductRequest": {
+        "type": "object",
+        "description": "Payload to create or replace a product",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Commercial name of the product.",
+            "example": "Wireless keyboard K380",
+            "maxLength": 100,
+            "minLength": 3
+          },
+          "description": {
+            "type": "string",
+            "description": "Free-text description of the product.",
+            "example": "Bluetooth keyboard, multi-device, Spanish layout",
+            "maxLength": 500,
+            "minLength": 1
+          },
+          "sku": {
+            "type": "string",
+            "description": "Stock keeping unit. Must be unique across the catalogue. It cannot be changed: a PUT with a different sku is rejected with 409.",
+            "example": "LOG-K380-ES",
+            "maxLength": 50,
+            "minLength": 1
+          },
+          "price": {
+            "type": "number",
+            "description": "Unit price in the catalogue currency. Cannot be negative, up to 10 integer digits and 2 decimals.",
+            "example": 39.9,
+            "minimum": 0.0
+          },
+          "stock": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Units available. Zero is valid and means out of stock.",
+            "example": 120,
+            "minimum": 0
+          },
+          "categoryId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Id of an existing category this product belongs to.",
+            "example": 3
+          }
+        },
+        "required": [
+          "categoryId",
+          "description",
+          "name",
+          "price",
+          "sku",
+          "stock"
+        ]
+      },
+      "CategoryRequest": {
+        "type": "object",
+        "description": "Payload to create or replace a category",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the category. Must be unique.",
+            "example": "Electronics",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "description": "Free-text description of the category.",
+            "example": "Electronic devices and gadgets",
+            "maxLength": 500,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "PageMetadata": {
+        "type": "object",
+        "properties": {
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PagedModelProduct": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Product"
+            }
+          },
+          "page": {
+            "$ref": "#/components/schemas/PageMetadata"
+          }
+        }
+      },
+      "PagedModelCategory": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          },
+          "page": {
+            "$ref": "#/components/schemas/PageMetadata"
+          }
+        }
+      }
+    }
+  }
+}

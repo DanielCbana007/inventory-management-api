@@ -1,0 +1,28 @@
+name: Feedback
+description: Something is missing, could be better, or would be done differently in a real project
+title: "[Feedback]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. The most useful feedback explains **why**, so I can learn from it.
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you change?
+      description: The endpoint, class or decision you are talking about.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why?
+      description: The problem it causes, the trade-off, or a link to the official docs.
+    validations:
+      required: true
+  - type: textarea
+    id: how
+    attributes:
+      label: How would you approach it?
+      description: Optional. An idea or a pointer is enough; I would like to write the code myself.

@@ -13,6 +13,15 @@ java {
 	}
 }
 
+// Genera META-INF/build-info.properties: la version de arriba llega a la app como BuildProperties
+// y OpenAPI la lee de ahi. Asi solo hay un sitio donde cambiarla. Sin la hora de compilacion:
+// cambiaria en cada build y Gradle nunca daria los recursos por actualizados.
+springBoot {
+	buildInfo {
+		excludes = ['time']
+	}
+}
+
 repositories {
 	mavenCentral()
 }

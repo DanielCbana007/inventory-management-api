@@ -8,8 +8,6 @@ import inventory.management.api.product.dto.ProductRequestDto;
 import inventory.management.api.product.entity.ProductEntity;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 @Component
 public class ProductMapper {
     private final CategoryMapper mapper;
@@ -33,10 +31,6 @@ public class ProductMapper {
         );
     }
 
-    public List<ProductDto> toDtoAll(List<ProductEntity> entities) {
-
-        return entities.stream().map(this::toDto).toList();
-    }
 
     public ProductEntity toEntity(ProductRequestDto requestDto, CategoryEntity category) {
         return new ProductEntity(

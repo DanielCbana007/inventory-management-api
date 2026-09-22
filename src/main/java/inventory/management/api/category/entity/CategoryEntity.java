@@ -1,7 +1,6 @@
 package inventory.management.api.category.entity;
 
 import inventory.management.api.product.entity.ProductEntity;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
@@ -30,12 +29,9 @@ public class CategoryEntity {
     @Column(length = 500)
     private String description;
 
-    // MEJORA [§3.2]: cascade ALL + orphanRemoval hace que borrar una categoria borre TODOS
-    //         sus productos. Verificado: categoria con un producto -> DELETE -> 204 y el
-    //         producto desaparecio, sin aviso. Es deliberado (commit feat(category)!), pero
-    //         la alternativa habitual es 409 si la categoria no esta vacia. Ten preparada la
-    //         respuesta a "y que pasa si borro la categoria equivocada".
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+    // Sin cascade: una categoria con productos no se borra, CategoryService responde 409.
+    // La coleccion solo se usa para consultar si esta vacia (existsByIdAndProductsIsNotEmpty).
+    @OneToMany(mappedBy = "category")
     private List<ProductEntity> products = new ArrayList<>();
 
     public CategoryEntity() {

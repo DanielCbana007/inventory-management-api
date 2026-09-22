@@ -12,6 +12,6 @@ public record CategoryRequestDto(
 
         @Schema(description = "Free-text description of the category.",
                 example = "Electronic devices and gadgets")
-        String description
+        @Size(max = 500) String description
 ) {
 }

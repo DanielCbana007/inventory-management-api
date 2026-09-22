@@ -3,14 +3,19 @@ package inventory.management.api.category.controller;
 import inventory.management.api.category.dto.CategoryDto;
 import inventory.management.api.category.dto.CategoryRequestDto;
 import inventory.management.api.category.service.CategoryService;
+import inventory.management.api.common.SortableFields;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -18,10 +23,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 
 /**
- * Marcas de revision. Apuntan a las notas de la revision 5; el sufijo [§x] es la
+ * Marcas de revision. Apuntan a las notas de la revision 6; el sufijo [§x] es la
  * seccion donde esta el porque largo.
  *
  *   BLOQUEANTE  impide cerrar la revision. Maxima prioridad.
@@ -37,6 +41,8 @@ import java.util.List;
 @RequestMapping("/api/v1/categories")
 @Tag(name = "Categories", description = "Create, read, replace and delete inventory categories")
 public class CategoryController {
+    private static final SortableFields SORTABLE = SortableFields.of("id", "name");
+
     private final CategoryService categoryService;
 
     public CategoryController(CategoryService categoryService) {
@@ -48,10 +54,9 @@ public class CategoryController {
             summary = "Create category",
             description = "Registers a new category and returns the created resource with the id assigned by the database. The Location header points to its URL. The name must be unique.",
             responses = {
-                    // MEJORA [§3.4]: el 201 devuelve una cabecera Location y aqui no se declara.
-                    //         Un generador de clientes lee el contrato, no la prosa de la
-                    //         descripcion, asi que el cliente generado la ignora.
                     @ApiResponse(responseCode = "201", description = "Category created",
+                            headers = @Header(name = "Location", description = "URL of the created category",
+                                    schema = @Schema(type = "string", format = "uri")),
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = CategoryDto.class))),
                     @ApiResponse(responseCode = "409", description = "A category with that name already exists",
@@ -78,19 +83,23 @@ public class CategoryController {
 
     @GetMapping
     @Operation(
-            summary = "Get all categories",
-            description = "Returns the whole catalogue. Not paginated yet.",
+            summary = "Get categories, paginated",
+            description = "Returns one page of categories. page is zero-based, size defaults to 20 and "
+                    + "is capped at 100, and the order is by id unless sort is given (e.g. sort=name,desc). "
+                    + "Sortable fields: id, name.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "List of categories",
-                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    array = @ArraySchema(schema = @Schema(implementation = CategoryDto.class)))),
+                    @ApiResponse(responseCode = "200", description = "One page of categories"),
+                    @ApiResponse(responseCode = "400", description = "sort names a field that is not sortable",
+                            content = @Content(mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetail.class)))
             }
     )
-    // MEJORA [§2.3]: sin paginacion; devuelve la tabla entera. Cambia el contrato de
-    //         List<T> a Page<T>, asi que va DESPUES de los tests: hacerlo antes obliga a
-    //         reescribirlos.
-    public List<CategoryDto> getAll() {
-        return this.categoryService.getAllCategories();
+    // OK [§4]: PagedModel y no Page (formato JSON estable entre versiones), sort = "id" por
+    //     defecto (sin ORDER BY, Postgres no garantiza el orden y una fila podria salir en dos
+    //     paginas o en ninguna) y lista blanca de campos ordenables en SORTABLE.
+    public PagedModel<CategoryDto> getAll(
+            @ParameterObject @PageableDefault(size = 20, sort = "id") Pageable pageable) {
+        return new PagedModel<>(this.categoryService.getAllCategories(SORTABLE.check(pageable)));
     }
 
     @GetMapping("/{id}")
@@ -150,7 +159,8 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Delete category",
-            description = "Deletes the given category. Returns no body.",
+            description = "Deletes the given category. Returns no body. A category that still has "
+                    + "products cannot be deleted: move or delete its products first.",
             responses = {
                     @ApiResponse(responseCode = "204", description = "Category deleted",
                             content = @Content),
@@ -158,6 +168,9 @@ public class CategoryController {
                             content = @Content(mediaType = "application/problem+json",
                                     schema = @Schema(implementation = ProblemDetail.class))),
                     @ApiResponse(responseCode = "404", description = "No category exists with that id",
+                            content = @Content(mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetail.class))),
+                    @ApiResponse(responseCode = "409", description = "The category still has products",
                             content = @Content(mediaType = "application/problem+json",
                                     schema = @Schema(implementation = ProblemDetail.class)))
             }

@@ -3,6 +3,7 @@ package inventory.management.api.exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -39,6 +40,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(CusEntityConflictException.class)
     public ProblemDetail handleConflict(CusEntityConflictException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    // ---------- paginacion ----------
+
+    // Un sort sobre un campo que no existe (?sort=precio) llegaba al catch-all como 500.
+    // Es un error del cliente. El detail no nombra la entidad para no exponer el modelo interno.
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ProblemDetail handleUnknownSortProperty(PropertyReferenceException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Cannot sort by '%s': unknown property".formatted(ex.getPropertyName()));
     }
 
     // ---------- red de seguridad de la base de datos ----------

@@ -15,6 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -84,24 +88,26 @@ class CategoryServiceTest {
     }
 
     @Test
-    @DisplayName("Should return all categories.")
+    @DisplayName("Should return the requested page mapped to DTOs, keeping the total.")
     void getAllCategories() {
         // Arrange
+        Pageable pageable = PageRequest.of(0, 2);
         List<CategoryEntity> entities = List.of(
                 new CategoryEntity("ACTION", "Action."),
                 new CategoryEntity("ANIMATED", "Animated.")
         );
 
-        when(repository.findAll()).thenReturn(entities);
+        when(repository.findAll(pageable)).thenReturn(new PageImpl<>(entities, pageable, 5));
 
         // Act
-        List<CategoryDto> result = service.getAllCategories();
+        Page<CategoryDto> result = service.getAllCategories(pageable);
 
         // Assert
-        assertEquals(2, result.size());
-        assertEquals("ACTION", result.get(0).name());
-        assertEquals("Action.", result.get(0).description());
-        assertEquals("ANIMATED", result.get(1).name());
+        assertEquals(2, result.getContent().size());
+        assertEquals("ACTION", result.getContent().get(0).name());
+        assertEquals("Action.", result.getContent().get(0).description());
+        assertEquals("ANIMATED", result.getContent().get(1).name());
+        assertEquals(5, result.getTotalElements());
     }
 
     @Nested

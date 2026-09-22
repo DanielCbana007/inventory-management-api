@@ -6,12 +6,20 @@ import inventory.management.api.exception.CusEntityConflictException;
 import inventory.management.api.exception.CusEntityNotFoundException;
 import inventory.management.api.product.dto.ProductDto;
 import inventory.management.api.product.dto.ProductRequestDto;
+import inventory.management.api.product.entity.ProductEntity;
 import inventory.management.api.product.service.ProductService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.core.PropertyReferenceException;
+import org.springframework.data.core.TypeInformation;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -155,18 +163,48 @@ class ProductControllerTest {
     class GetAll {
 
         @Test
-        @DisplayName("GET should return 200 with every product")
+        @DisplayName("GET should return 200 with the page content and its metadata")
         void getAllReturn200() throws Exception {
             // Arrange
-            when(service.getAllProducts()).thenReturn(List.of(response(10L, "SKU-1"), response(11L, "SKU-2")));
+            when(service.getAllProducts(any(Pageable.class))).thenReturn(new PageImpl<>(
+                    List.of(response(10L, "SKU-1"), response(11L, "SKU-2")), PageRequest.of(0, 2), 7));
 
             // Act & Assert
-            mockMvc.perform(get(PATH))
+            mockMvc.perform(get(PATH + "?size=2"))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$", hasSize(2)))
-                    .andExpect(jsonPath("$[0].sku").value("SKU-1"))
-                    .andExpect(jsonPath("$[1].sku").value("SKU-2"));
+                    .andExpect(jsonPath("$.content", hasSize(2)))
+                    .andExpect(jsonPath("$.content[0].sku").value("SKU-1"))
+                    .andExpect(jsonPath("$.content[1].sku").value("SKU-2"))
+                    .andExpect(jsonPath("$.page.totalElements").value(7))
+                    .andExpect(jsonPath("$.page.totalPages").value(4));
+        }
+
+        @Test
+        @DisplayName("GET without params should ask for page 0, size 20, ordered by id")
+        void getAllDefaultPageable() throws Exception {
+            // Arrange
+            when(service.getAllProducts(any(Pageable.class))).thenReturn(Page.empty());
+
+            // Act
+            mockMvc.perform(get(PATH)).andExpect(status().isOk());
+
+            // Assert
+            verify(service).getAllProducts(PageRequest.of(0, 20, Sort.by("id")));
+        }
+
+        @Test
+        @DisplayName("GET should return 400 when sort names an unknown property")
+        void getAllUnknownSort400() throws Exception {
+            // Arrange
+            when(service.getAllProducts(any(Pageable.class))).thenThrow(
+                    new PropertyReferenceException("precio", TypeInformation.of(ProductEntity.class), List.of()));
+
+            // Act & Assert
+            mockMvc.perform(get(PATH + "?sort=precio"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentType(PROBLEM_JSON))
+                    .andExpect(jsonPath("$.detail").value(containsString("precio")));
         }
 
         @Test

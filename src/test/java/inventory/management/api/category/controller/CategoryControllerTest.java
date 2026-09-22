@@ -2,6 +2,7 @@ package inventory.management.api.category.controller;
 
 import inventory.management.api.category.dto.CategoryDto;
 import inventory.management.api.category.dto.CategoryRequestDto;
+import inventory.management.api.category.entity.CategoryEntity;
 import inventory.management.api.category.service.CategoryService;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
 import inventory.management.api.exception.CusEntityConflictException;
@@ -11,6 +12,13 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.core.PropertyReferenceException;
+import org.springframework.data.core.TypeInformation;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -119,7 +127,7 @@ class CategoryControllerTest {
     @DisplayName("getAll")
     class GetAll {
         @Test
-        @DisplayName("GET should return 200 when get all categories.")
+        @DisplayName("GET should return 200 with the page content and its metadata")
         void getAllReturn200() throws Exception {
             // Arrange
             List<CategoryDto> categoryDtos = List.of(
@@ -127,16 +135,59 @@ class CategoryControllerTest {
                     new CategoryDto(2L, "ANIMATED", "Animated")
             );
 
-            when(service.getAllCategories()).thenReturn(categoryDtos);
+            when(service.getAllCategories(any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(categoryDtos, PageRequest.of(0, 20), 2));
 
             // Act & Assert
             mockMvc.perform(get(PATH + "/categories"))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$", hasSize(2)))
-                    .andExpect(jsonPath("$[0].id").value(1))
-                    .andExpect(jsonPath("$[0].name").value("ACTION"))
-                    .andExpect(jsonPath("$[1].name").value("ANIMATED"));
+                    .andExpect(jsonPath("$.content", hasSize(2)))
+                    .andExpect(jsonPath("$.content[0].id").value(1))
+                    .andExpect(jsonPath("$.content[1].name").value("ANIMATED"))
+                    .andExpect(jsonPath("$.page.totalElements").value(2))
+                    .andExpect(jsonPath("$.page.number").value(0));
+        }
+
+        @Test
+        @DisplayName("GET without params should ask for page 0, size 20, ordered by id")
+        void getAllDefaultPageable() throws Exception {
+            // Arrange
+            when(service.getAllCategories(any(Pageable.class))).thenReturn(Page.empty());
+
+            // Act
+            mockMvc.perform(get(PATH + "/categories")).andExpect(status().isOk());
+
+            // Assert
+            verify(service).getAllCategories(PageRequest.of(0, 20, Sort.by("id")));
+        }
+
+        @Test
+        @DisplayName("GET should pass page, size and sort through, capping size at 100")
+        void getAllCustomPageable() throws Exception {
+            // Arrange
+            when(service.getAllCategories(any(Pageable.class))).thenReturn(Page.empty());
+
+            // Act
+            mockMvc.perform(get(PATH + "/categories?page=1&size=1000&sort=name,desc"))
+                    .andExpect(status().isOk());
+
+            // Assert
+            verify(service).getAllCategories(PageRequest.of(1, 100, Sort.by(Sort.Direction.DESC, "name")));
+        }
+
+        @Test
+        @DisplayName("GET should return 400 when sort names an unknown property")
+        void getAllUnknownSort400() throws Exception {
+            // Arrange
+            when(service.getAllCategories(any(Pageable.class))).thenThrow(
+                    new PropertyReferenceException("nombre", TypeInformation.of(CategoryEntity.class), List.of()));
+
+            // Act & Assert
+            mockMvc.perform(get(PATH + "/categories?sort=nombre"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentType("application/problem+json"))
+                    .andExpect(jsonPath("$.detail").value(containsString("nombre")));
         }
 
         @Test

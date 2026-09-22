@@ -10,10 +10,11 @@ import inventory.management.api.product.dto.ProductDto;
 import inventory.management.api.product.dto.ProductRequestDto;
 import inventory.management.api.product.entity.ProductEntity;
 import inventory.management.api.product.mapper.ProductMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 
 @Service
 public class ProductService {
@@ -46,9 +47,8 @@ public class ProductService {
 
     // Read
     @Transactional(readOnly = true)
-    public List<ProductDto> getAllProducts(){
-        List<ProductEntity> listProduct = this.productRepository.findAll();
-        return this.mapper.toDtoAll(listProduct);
+    public Page<ProductDto> getAllProducts(Pageable pageable){
+        return this.productRepository.findAll(pageable).map(this.mapper::toDto);
     }
 
     // readOnly no es solo estilo: category es LAZY y open-in-view=false, asi que el toDto

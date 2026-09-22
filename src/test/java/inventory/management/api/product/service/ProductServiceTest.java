@@ -18,6 +18,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -123,22 +127,26 @@ class ProductServiceTest {
     }
 
     @Test
-    @DisplayName("Should return all products with their category.")
+    @DisplayName("Should return the requested page with each category, keeping the total.")
     void getAllProducts() {
         // Arrange
-        when(productRepository.findAll()).thenReturn(List.of(
+        Pageable pageable = PageRequest.of(0, 2);
+        List<ProductEntity> entities = List.of(
                 new ProductEntity("Keyboard", "d", "SKU-1", new BigDecimal("10.00"), 5, electronics),
                 new ProductEntity("T-shirt", "d", "SKU-2", new BigDecimal("20.00"), 8, clothing)
-        ));
+        );
+
+        when(productRepository.findAll(pageable)).thenReturn(new PageImpl<>(entities, pageable, 7));
 
         // Act
-        List<ProductDto> result = service.getAllProducts();
+        Page<ProductDto> result = service.getAllProducts(pageable);
 
         // Assert
-        assertEquals(2, result.size());
-        assertEquals("SKU-1", result.get(0).sku());
-        assertEquals("ELECTRONICS", result.get(0).category().name());
-        assertEquals("CLOTHING", result.get(1).category().name());
+        assertEquals(2, result.getContent().size());
+        assertEquals("SKU-1", result.getContent().get(0).sku());
+        assertEquals("ELECTRONICS", result.getContent().get(0).category().name());
+        assertEquals("CLOTHING", result.getContent().get(1).category().name());
+        assertEquals(7, result.getTotalElements());
     }
 
     @Nested

@@ -145,6 +145,41 @@ class ProductControllerTest {
         }
 
         @Test
+        @DisplayName("POST should return 400 when the price has more decimals than its column")
+        void createReturn400PriceScale() throws Exception {
+            // Arrange
+            ProductRequestDto threeDecimals = new ProductRequestDto("Keyboard K380", "Bluetooth keyboard",
+                    "LOG-K380", new BigDecimal("1.999"), 120, 1L);
+
+            // Act & Assert
+            mockMvc.perform(post(PATH)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(threeDecimals)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errors[0].field").value("price"))
+                    .andExpect(jsonPath("$.errors[0].code").value("Digits"));
+
+            verify(service, never()).createProduct(any());
+        }
+
+        @Test
+        @DisplayName("POST should return 400 when the price has more integer digits than its column")
+        void createReturn400PricePrecision() throws Exception {
+            // Arrange
+            ProductRequestDto tooBig = new ProductRequestDto("Keyboard K380", "Bluetooth keyboard",
+                    "LOG-K380", new BigDecimal("123456789012.00"), 120, 1L);
+
+            // Act & Assert
+            mockMvc.perform(post(PATH)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(tooBig)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errors[0].code").value("Digits"));
+
+            verify(service, never()).createProduct(any());
+        }
+
+        @Test
         @DisplayName("POST should return 400 when the JSON is malformed")
         void createReturn400MalformedJson() throws Exception {
             // Act & Assert

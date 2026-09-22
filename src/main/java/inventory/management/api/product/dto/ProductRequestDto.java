@@ -2,6 +2,7 @@ package inventory.management.api.product.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -28,9 +29,10 @@ public record ProductRequestDto(
         @NotBlank @Size(min = 1, max = 50)
         String sku,
 
-        @Schema(description = "Unit price in the catalogue currency. Cannot be negative.",
+        @Schema(description = "Unit price in the catalogue currency. Cannot be negative, "
+                + "up to 10 integer digits and 2 decimals.",
                 example = "39.90")
-        @NotNull @DecimalMin(value = "0.00")
+        @NotNull @DecimalMin(value = "0.00") @Digits(integer = 10, fraction = 2)
         BigDecimal price,
 
         @Schema(description = "Units available. Zero is valid and means out of stock.",

@@ -46,6 +46,13 @@ public class CategoryService {
         return this.mapper.toDtoAll(listCategories);
     }
 
+    @Transactional(readOnly = true)
+    public CategoryDto getCategoryById(Long id) {
+        CategoryEntity category = this.categoryRepository.findById(id)
+                .orElseThrow(() -> CusEntityNotFoundException.of(ENTITY_NAME, id));
+        return this.mapper.toDto(category);
+    }
+
     @Transactional
     public CategoryDto updateCategory(CategoryRequestDto requestDto, Long id) {
         CategoryEntity category = this.categoryRepository.findById(id)

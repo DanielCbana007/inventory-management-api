@@ -151,6 +151,49 @@ class CategoryControllerTest {
     }
 
     @Nested
+    @DisplayName("getById")
+    class GetById {
+
+        @Test
+        @DisplayName("GET /{id} should return 200 with the category")
+        void getByIdReturn200() throws Exception {
+            // Arrange
+            when(service.getCategoryById(1L)).thenReturn(new CategoryDto(1L, "ACTION", "Action."));
+
+            // Act & Assert
+            mockMvc.perform(get(PATH + "/categories/1"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.id").value(1))
+                    .andExpect(jsonPath("$.name").value("ACTION"));
+        }
+
+        @Test
+        @DisplayName("GET /{id} should return 404 when the category does not exist")
+        void getByIdReturn404() throws Exception {
+            // Arrange
+            when(service.getCategoryById(99L)).thenThrow(CusEntityNotFoundException.of("Category", 99L));
+
+            // Act & Assert
+            mockMvc.perform(get(PATH + "/categories/99"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(content().contentType("application/problem+json"))
+                    .andExpect(jsonPath("$.detail").value(containsString("99")));
+        }
+
+        @Test
+        @DisplayName("GET /{id} should return 400 when the id is not a valid number")
+        void getByIdReturn400() throws Exception {
+            // Act & Assert
+            mockMvc.perform(get(PATH + "/categories/abc"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentType("application/problem+json"));
+
+            verify(service, never()).getCategoryById(any());
+        }
+    }
+
+    @Nested
     @DisplayName("update")
     class Update {
         @Test

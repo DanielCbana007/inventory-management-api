@@ -6,11 +6,13 @@ import inventory.management.api.category.entity.CategoryEntity;
 import inventory.management.api.category.mapper.CategoryMapper;
 import inventory.management.api.category.repository.CategoryRepository;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
+import inventory.management.api.exception.CusEntityConflictException;
 import inventory.management.api.exception.CusEntityNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 
 @Service
 public class CategoryService {
@@ -39,11 +41,9 @@ public class CategoryService {
         return  this.mapper.toDto(this.categoryRepository.save(newCategory));
     }
 
-    // MEJORA [§2.3]: findAll() sin Pageable trae la tabla entera. Ver la nota del controller.
     @Transactional(readOnly = true)
-    public List<CategoryDto> getAllCategories() {
-        List<CategoryEntity> listCategories = this.categoryRepository.findAll();
-        return this.mapper.toDtoAll(listCategories);
+    public Page<CategoryDto> getAllCategories(Pageable pageable) {
+        return this.categoryRepository.findAll(pageable).map(this.mapper::toDto);
     }
 
     @Transactional(readOnly = true)
@@ -53,6 +53,9 @@ public class CategoryService {
         return this.mapper.toDto(category);
     }
 
+    // MEJORA [§3.1]: no comprueba si el nombre nuevo ya es de otra categoria. El 409 llega igual,
+    //         pero lo pone la restriccion unique al hacer commit, con un mensaje generico; el POST
+    //         dice "Category with name 'X' already exists". existsByNameAndIdNot los iguala.
     @Transactional
     public CategoryDto updateCategory(CategoryRequestDto requestDto, Long id) {
         CategoryEntity category = this.categoryRepository.findById(id)
@@ -72,6 +75,9 @@ public class CategoryService {
     public void deleteCategory(Long id) {
         CategoryEntity category = this.categoryRepository.findById(id)
                 .orElseThrow(() -> CusEntityNotFoundException.of(ENTITY_NAME, id));
+        if (this.categoryRepository.existsByIdAndProductsIsNotEmpty(id)) {
+            throw CusEntityConflictException.hasDependents(ENTITY_NAME, id, "products");
+        }
 
         this.categoryRepository.delete(category);
     }

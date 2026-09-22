@@ -2,6 +2,7 @@ package inventory.management.api.product.controller;
 
 import inventory.management.api.category.dto.CategoryDto;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
+import inventory.management.api.exception.CusEntityConflictException;
 import inventory.management.api.exception.CusEntityNotFoundException;
 import inventory.management.api.product.dto.ProductDto;
 import inventory.management.api.product.dto.ProductRequestDto;
@@ -11,6 +12,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -136,6 +142,41 @@ class ProductControllerTest {
         }
 
         @Test
+        @DisplayName("POST should return 400 when the price has more decimals than its column")
+        void createReturn400PriceScale() throws Exception {
+            // Arrange
+            ProductRequestDto threeDecimals = new ProductRequestDto("Keyboard K380", "Bluetooth keyboard",
+                    "LOG-K380", new BigDecimal("1.999"), 120, 1L);
+
+            // Act & Assert
+            mockMvc.perform(post(PATH)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(threeDecimals)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errors[0].field").value("price"))
+                    .andExpect(jsonPath("$.errors[0].code").value("Digits"));
+
+            verify(service, never()).createProduct(any());
+        }
+
+        @Test
+        @DisplayName("POST should return 400 when the price has more integer digits than its column")
+        void createReturn400PricePrecision() throws Exception {
+            // Arrange
+            ProductRequestDto tooBig = new ProductRequestDto("Keyboard K380", "Bluetooth keyboard",
+                    "LOG-K380", new BigDecimal("123456789012.00"), 120, 1L);
+
+            // Act & Assert
+            mockMvc.perform(post(PATH)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(tooBig)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errors[0].code").value("Digits"));
+
+            verify(service, never()).createProduct(any());
+        }
+
+        @Test
         @DisplayName("POST should return 400 when the JSON is malformed")
         void createReturn400MalformedJson() throws Exception {
             // Act & Assert
@@ -154,18 +195,46 @@ class ProductControllerTest {
     class GetAll {
 
         @Test
-        @DisplayName("GET should return 200 with every product")
+        @DisplayName("GET should return 200 with the page content and its metadata")
         void getAllReturn200() throws Exception {
             // Arrange
-            when(service.getAllProducts()).thenReturn(List.of(response(10L, "SKU-1"), response(11L, "SKU-2")));
+            when(service.getAllProducts(any(Pageable.class))).thenReturn(new PageImpl<>(
+                    List.of(response(10L, "SKU-1"), response(11L, "SKU-2")), PageRequest.of(0, 2), 7));
 
             // Act & Assert
-            mockMvc.perform(get(PATH))
+            mockMvc.perform(get(PATH + "?size=2"))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$", hasSize(2)))
-                    .andExpect(jsonPath("$[0].sku").value("SKU-1"))
-                    .andExpect(jsonPath("$[1].sku").value("SKU-2"));
+                    .andExpect(jsonPath("$.content", hasSize(2)))
+                    .andExpect(jsonPath("$.content[0].sku").value("SKU-1"))
+                    .andExpect(jsonPath("$.content[1].sku").value("SKU-2"))
+                    .andExpect(jsonPath("$.page.totalElements").value(7))
+                    .andExpect(jsonPath("$.page.totalPages").value(4));
+        }
+
+        @Test
+        @DisplayName("GET without params should ask for page 0, size 20, ordered by id")
+        void getAllDefaultPageable() throws Exception {
+            // Arrange
+            when(service.getAllProducts(any(Pageable.class))).thenReturn(Page.empty());
+
+            // Act
+            mockMvc.perform(get(PATH)).andExpect(status().isOk());
+
+            // Assert
+            verify(service).getAllProducts(PageRequest.of(0, 20, Sort.by("id")));
+        }
+
+        @Test
+        @DisplayName("GET should return 400 when sort is not a sortable field")
+        void getAllUnsortableField400() throws Exception {
+            // Act & Assert
+            mockMvc.perform(get(PATH + "?sort=precio"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentType(PROBLEM_JSON))
+                    .andExpect(jsonPath("$.detail").value(containsString("precio")));
+
+            verify(service, never()).getAllProducts(any());
         }
 
         @Test
@@ -257,6 +326,22 @@ class ProductControllerTest {
                     .andExpect(status().isNotFound())
                     .andExpect(content().contentType(PROBLEM_JSON))
                     .andExpect(jsonPath("$.detail").value(containsString("99")));
+        }
+
+        @Test
+        @DisplayName("PUT should return 409 when the sku differs from the stored one")
+        void updateReturn409() throws Exception {
+            // Arrange
+            when(service.updateProduct(any(ProductRequestDto.class), eq(10L)))
+                    .thenThrow(CusEntityConflictException.immutableField("Product", "sku", "OLD", "LOG-K380"));
+
+            // Act & Assert
+            mockMvc.perform(put(PATH + "/10")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isConflict())
+                    .andExpect(content().contentType(PROBLEM_JSON))
+                    .andExpect(jsonPath("$.detail").value(containsString("sku")));
         }
 
         @Test

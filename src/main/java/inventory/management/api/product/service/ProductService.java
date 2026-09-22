@@ -3,16 +3,18 @@ package inventory.management.api.product.service;
 import inventory.management.api.category.entity.CategoryEntity;
 import inventory.management.api.category.repository.CategoryRepository;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
+import inventory.management.api.exception.CusEntityConflictException;
 import inventory.management.api.exception.CusEntityNotFoundException;
 import inventory.management.api.product.repository.ProductRepository;
 import inventory.management.api.product.dto.ProductDto;
 import inventory.management.api.product.dto.ProductRequestDto;
 import inventory.management.api.product.entity.ProductEntity;
 import inventory.management.api.product.mapper.ProductMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 
 @Service
 public class ProductService {
@@ -44,15 +46,9 @@ public class ProductService {
     }
 
     // Read
-    // MEJORA [§3.1]: N+1 medido, no supuesto. 19 productos -> 5 SELECT (1 sobre tbl_product
-    //         y 1 por cada categoria distinta). Son 5 y no 20 solo porque hay 4 categorias y
-    //         la cache de la sesion deduplica; con 500 productos en 80 categorias son 81
-    //         consultas para pintar una lista. El fetch = LAZY es correcto y NO es la causa:
-    //         falta pedir la categoria de golpe con @EntityGraph en el repositorio.
     @Transactional(readOnly = true)
-    public List<ProductDto> getAllProducts(){
-        List<ProductEntity> listProduct = this.productRepository.findAll();
-        return this.mapper.toDtoAll(listProduct);
+    public Page<ProductDto> getAllProducts(Pageable pageable){
+        return this.productRepository.findAll(pageable).map(this.mapper::toDto);
     }
 
     // readOnly no es solo estilo: category es LAZY y open-in-view=false, asi que el toDto
@@ -70,6 +66,11 @@ public class ProductService {
     public ProductDto updateProduct(ProductRequestDto requestDto, Long id){
         ProductEntity product = this.productRepository.findById(id)
                 .orElseThrow(() -> CusEntityNotFoundException.of("Product", id));
+        // OK [§4]: 409 si el sku cambia, en vez de ignorarlo en silencio. El detail dice el
+        //     guardado y el recibido, asi el cliente sabe exactamente que corregir.
+        if (!product.getSku().equals(requestDto.sku())) {
+            throw CusEntityConflictException.immutableField("Product", "sku", product.getSku(), requestDto.sku());
+        }
         CategoryEntity category = this.categoryRepository.findById(requestDto.categoryId())
                 .orElseThrow(() -> CusEntityNotFoundException.of("Category", requestDto.categoryId()));
 
@@ -87,9 +88,9 @@ public class ProductService {
     }
 
     // Delete
-    // OK [§4]: las tres escrituras con @Transactional y la lectura con readOnly = true, y
-    //     updateProduct se apoya en el dirty checking sin llamar a save(). Saber que ese save
-    //     sobra dentro de una transaccion es lo que separa Competente de Inicial en este eje.
+    // OK [§4]: escrituras con @Transactional y lecturas con readOnly = true. updateProduct no
+    //     llama a save() (dirty checking) pero si a flush(): @UpdateTimestamp se escribe en el
+    //     flush, y sin el la respuesta llevaria el updatedAt viejo. El verify(flush) lo protege.
     @Transactional
     public void deleteProduct(Long id){
         ProductEntity product = this.productRepository.findById(id)

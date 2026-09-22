@@ -4,12 +4,18 @@ import inventory.management.api.category.dto.CategoryDto;
 import inventory.management.api.category.dto.CategoryRequestDto;
 import inventory.management.api.category.service.CategoryService;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
+import inventory.management.api.exception.CusEntityConflictException;
 import inventory.management.api.exception.CusEntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -101,6 +107,23 @@ class CategoryControllerTest {
         }
 
         @Test
+        @DisplayName("POST should return 400 when the description is longer than its column")
+        void createReturn400DescriptionTooLong() throws Exception {
+            // Arrange
+            CategoryRequestDto tooLong = new CategoryRequestDto("ACTION", "x".repeat(501));
+
+            // Act & Assert
+            mockMvc.perform(post(PATH + "/categories")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(tooLong)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errors[0].field").value("description"))
+                    .andExpect(jsonPath("$.errors[0].code").value("Size"));
+
+            verify(service, never()).createCategory(any());
+        }
+
+        @Test
         @DisplayName("POST should return 400 when the JSON is malformed")
         void createReturn400MalformedJson() throws Exception {
             // Act & Assert
@@ -118,7 +141,7 @@ class CategoryControllerTest {
     @DisplayName("getAll")
     class GetAll {
         @Test
-        @DisplayName("GET should return 200 when get all categories.")
+        @DisplayName("GET should return 200 with the page content and its metadata")
         void getAllReturn200() throws Exception {
             // Arrange
             List<CategoryDto> categoryDtos = List.of(
@@ -126,16 +149,57 @@ class CategoryControllerTest {
                     new CategoryDto(2L, "ANIMATED", "Animated")
             );
 
-            when(service.getAllCategories()).thenReturn(categoryDtos);
+            when(service.getAllCategories(any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(categoryDtos, PageRequest.of(0, 20), 2));
 
             // Act & Assert
             mockMvc.perform(get(PATH + "/categories"))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$", hasSize(2)))
-                    .andExpect(jsonPath("$[0].id").value(1))
-                    .andExpect(jsonPath("$[0].name").value("ACTION"))
-                    .andExpect(jsonPath("$[1].name").value("ANIMATED"));
+                    .andExpect(jsonPath("$.content", hasSize(2)))
+                    .andExpect(jsonPath("$.content[0].id").value(1))
+                    .andExpect(jsonPath("$.content[1].name").value("ANIMATED"))
+                    .andExpect(jsonPath("$.page.totalElements").value(2))
+                    .andExpect(jsonPath("$.page.number").value(0));
+        }
+
+        @Test
+        @DisplayName("GET without params should ask for page 0, size 20, ordered by id")
+        void getAllDefaultPageable() throws Exception {
+            // Arrange
+            when(service.getAllCategories(any(Pageable.class))).thenReturn(Page.empty());
+
+            // Act
+            mockMvc.perform(get(PATH + "/categories")).andExpect(status().isOk());
+
+            // Assert
+            verify(service).getAllCategories(PageRequest.of(0, 20, Sort.by("id")));
+        }
+
+        @Test
+        @DisplayName("GET should pass page, size and sort through, capping size at 100")
+        void getAllCustomPageable() throws Exception {
+            // Arrange
+            when(service.getAllCategories(any(Pageable.class))).thenReturn(Page.empty());
+
+            // Act
+            mockMvc.perform(get(PATH + "/categories?page=1&size=1000&sort=name,desc"))
+                    .andExpect(status().isOk());
+
+            // Assert
+            verify(service).getAllCategories(PageRequest.of(1, 100, Sort.by(Sort.Direction.DESC, "name")));
+        }
+
+        @Test
+        @DisplayName("GET should return 400 when sort is not a sortable field, like the products collection")
+        void getAllUnsortableField400() throws Exception {
+            // Act & Assert
+            mockMvc.perform(get(PATH + "/categories?sort=products"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentType("application/problem+json"))
+                    .andExpect(jsonPath("$.detail").value(containsString("products")));
+
+            verify(service, never()).getAllCategories(any());
         }
 
         @Test
@@ -273,6 +337,20 @@ class CategoryControllerTest {
                     .andExpect(status().isNotFound())
                     .andExpect(content().contentType("application/problem+json"))
                     .andExpect(jsonPath("$.detail").value(containsString("99")));
+        }
+
+        @Test
+        @DisplayName("DELETE should return 409 when the category still has products")
+        void deleteReturn409() throws Exception {
+            // Arrange
+            doThrow(CusEntityConflictException.hasDependents("Category", 1L, "products"))
+                    .when(service).deleteCategory(1L);
+
+            // Act & Assert
+            mockMvc.perform(delete(PATH + "/categories/1"))
+                    .andExpect(status().isConflict())
+                    .andExpect(content().contentType("application/problem+json"))
+                    .andExpect(jsonPath("$.detail").value(containsString("products")));
         }
 
         @Test

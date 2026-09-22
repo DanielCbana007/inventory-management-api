@@ -1,16 +1,21 @@
 package inventory.management.api.product.controller;
 
+import inventory.management.api.common.SortableFields;
 import inventory.management.api.product.dto.ProductDto;
 import inventory.management.api.product.dto.ProductRequestDto;
 import inventory.management.api.product.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -25,11 +30,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 
 /**
  * Leyenda de las marcas de revision: ver la cabecera de CategoryController.
- * Apuntan a las notas de la revision 5 y el sufijo [§x] es su seccion.
+ * Apuntan a las notas de la revision 6 y el sufijo [§x] es su seccion.
  */
 @RestController
 @RequestMapping("/api/v1/products")
@@ -37,6 +41,8 @@ import java.util.List;
 public class ProductController {
 
     private static final String PROBLEM_JSON = "application/problem+json";
+    private static final SortableFields SORTABLE =
+            SortableFields.of("id", "name", "sku", "price", "stock", "createdAt", "updatedAt");
 
     private final ProductService service;
 
@@ -51,9 +57,9 @@ public class ProductController {
                     + "assigned by the database. The Location header points to its URL. "
                     + "The sku must be unique and categoryId must reference an existing category.",
             responses = {
-                    // MEJORA [§3.4]: el 201 devuelve una cabecera Location y aqui no se declara.
-                    //         Un generador de clientes lee el contrato, no la prosa.
                     @ApiResponse(responseCode = "201", description = "Product created",
+                            headers = @Header(name = "Location", description = "URL of the created product",
+                                    schema = @Schema(type = "string", format = "uri")),
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = ProductDto.class))),
                     @ApiResponse(responseCode = "400", description = "Invalid payload: a required field is missing, the name or sku length is out of range, or price or stock is negative",
@@ -83,18 +89,21 @@ public class ProductController {
 
     @GetMapping
     @Operation(
-            summary = "Get all products",
-            description = "Returns the whole catalogue with the category of each product. Not paginated yet.",
+            summary = "Get products, paginated",
+            description = "Returns one page of products with the category of each one. page is zero-based, "
+                    + "size defaults to 20 and is capped at 100, and the order is by id unless sort is given. "
+                    + "Sortable fields: id, name, sku, price, stock, createdAt, updatedAt "
+                    + "(e.g. sort=price,desc).",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "List of products",
-                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    array = @ArraySchema(schema = @Schema(implementation = ProductDto.class))))
+                    @ApiResponse(responseCode = "200", description = "One page of products"),
+                    @ApiResponse(responseCode = "400", description = "sort names a field that is not sortable",
+                            content = @Content(mediaType = PROBLEM_JSON,
+                                    schema = @Schema(implementation = ProblemDetail.class)))
             }
     )
-    // MEJORA [§2.3]: sin paginacion. Aqui pesa mas que en Category: un catalogo crece sin
-    //         techo. Va DESPUES de los tests, porque cambia el contrato a Page<T>.
-    public List<ProductDto> getAll() {
-        return this.service.getAllProducts();
+    public PagedModel<ProductDto> getAll(
+            @ParameterObject @PageableDefault(size = 20, sort = "id") Pageable pageable) {
+        return new PagedModel<>(this.service.getAllProducts(SORTABLE.check(pageable)));
     }
 
     @GetMapping("/{id}")
@@ -126,7 +135,7 @@ public class ProductController {
             summary = "Update product by ID",
             description = "Replaces the product as a whole. This is a PUT, not a PATCH: fields you do not "
                     + "send are set to null, they do not keep their previous value. The sku cannot be "
-                    + "changed: it is the commercial identifier and stays with the product for its lifetime.",
+                    + "changed: send the current one, or the request is rejected with 409.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Product updated",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -136,12 +145,15 @@ public class ProductController {
                                     schema = @Schema(implementation = ProblemDetail.class))),
                     @ApiResponse(responseCode = "404", description = "No product exists with that id, or no category exists with the given categoryId",
                             content = @Content(mediaType = PROBLEM_JSON,
+                                    schema = @Schema(implementation = ProblemDetail.class))),
+                    @ApiResponse(responseCode = "409", description = "The sku sent differs from the stored one: it cannot be changed",
+                            content = @Content(mediaType = PROBLEM_JSON,
                                     schema = @Schema(implementation = ProblemDetail.class)))
             }
     )
     public ResponseEntity<ProductDto> update(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "New state of the product. The sku is ignored: it cannot be changed.")
+                    description = "New state of the product. The sku must match the stored one.")
             @RequestBody @Valid ProductRequestDto requestDto,
             @Parameter(name = "id", description = "Id of the product to replace",
                     example = "3", required = true)

@@ -4,7 +4,7 @@ import inventory.management.api.category.entity.CategoryEntity;
 import inventory.management.api.category.repository.CategoryRepository;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
 import inventory.management.api.exception.CusEntityNotFoundException;
-import inventory.management.api.product.Repository.ProductRepository;
+import inventory.management.api.product.repository.ProductRepository;
 import inventory.management.api.product.dto.ProductDto;
 import inventory.management.api.product.dto.ProductRequestDto;
 import inventory.management.api.product.entity.ProductEntity;
@@ -14,23 +14,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// ERROR [§1.4]: la clase se llama ProdurctService. La errata esta en un identificador
-//        publico: aparece en el import de ProductController, en su constructor y en todo test
-//        futuro, asi que cuanto mas tarde se arregle mas archivos toca el commit. No es un
-//        trade-off, es descuido, y se ve en los primeros treinta segundos de una revision.
-//        Usa Shift+F6 (renombrar) de IntelliJ, que actualiza imports y referencias.
 // FALTA [§2.1]: cero tests. Es el servicio MAS complejo del proyecto -dos repositorios, una
 //        relacion y dos motivos distintos de 404- y el unico sin cobertura. CLAUDE.md exige
 //        cobertura al menos en la capa de servicio. Los siete casos estan en la auditoria.
 //        Usa el mapper REAL, como en CategoryServiceTest: con el mapper mockeado, el caso
 //        "actualizar devuelve los valores nuevos" no puede fallar nunca.
 @Service
-public class ProdurctService {
+public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMapper mapper;
 
-    public ProdurctService(ProductRepository productRepository, CategoryRepository categoryRepository, ProductMapper mapper) {
+    public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository, ProductMapper mapper) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.mapper = mapper;

@@ -25,7 +25,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 
 /**
- * Marcas de revision. Apuntan a las notas de la revision 5; el sufijo [§x] es la
+ * Marcas de revision. Apuntan a las notas de la revision 6; el sufijo [§x] es la
  * seccion donde esta el porque largo.
  *
  *   BLOQUEANTE  impide cerrar la revision. Maxima prioridad.
@@ -94,8 +94,9 @@ public class CategoryController {
                                     schema = @Schema(implementation = ProblemDetail.class)))
             }
     )
-    // sort = "id" por defecto: sin ORDER BY, Postgres no garantiza el orden y la misma fila
-    // podria salir en dos paginas o en ninguna.
+    // OK [§4]: PagedModel y no Page (formato JSON estable entre versiones), sort = "id" por
+    //     defecto (sin ORDER BY, Postgres no garantiza el orden y una fila podria salir en dos
+    //     paginas o en ninguna) y lista blanca de campos ordenables en SORTABLE.
     public PagedModel<CategoryDto> getAll(
             @ParameterObject @PageableDefault(size = 20, sort = "id") Pageable pageable) {
         return new PagedModel<>(this.categoryService.getAllCategories(SORTABLE.check(pageable)));

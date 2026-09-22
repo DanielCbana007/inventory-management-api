@@ -33,7 +33,7 @@ import java.net.URI;
 
 /**
  * Leyenda de las marcas de revision: ver la cabecera de CategoryController.
- * Apuntan a las notas de la revision 5 y el sufijo [§x] es su seccion.
+ * Apuntan a las notas de la revision 6 y el sufijo [§x] es su seccion.
  */
 @RestController
 @RequestMapping("/api/v1/products")

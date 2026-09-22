@@ -19,7 +19,7 @@ import java.util.List;
 
 // OK [§4]: extender ResponseEntityExceptionHandler en vez de capturar Exception es lo que
 //     hace que 405 y 415 salgan ya en application/problem+json sin escribir un handler para
-//     ellos. Verificado en la revision 5: los 12 casos de la matriz devuelven ProblemDetail.
+//     ellos. Verificado en la revision 6: los 29 casos de la matriz devuelven ProblemDetail.
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
@@ -59,6 +59,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     // ---------- red de seguridad de la base de datos ----------
 
+    // MEJORA [§3.2]: todo lo que rechaza la base sale como 409, tambien un texto demasiado largo
+    //         o un numero que no cabe, que son 400. Si ves este 409 generico en el log, falta una
+    //         validacion en el DTO: la regla es que la base no deberia tener que rechazar nada.
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
         log.warn("Data integrity violation: {}", ex.getMessage());

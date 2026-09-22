@@ -32,7 +32,7 @@ public class CategoryService {
         //     desde la restriccion unique de Postgres. Esa restriccion NO sobra: es la
         //     garantia real para la condicion de carrera entre este if y el save().
         if (categoryRepository.existsByName(requestDto.name())){
-            throw CusEntityAlreadyExistsException.of(ENTITY_NAME, requestDto.name());
+            throw CusEntityAlreadyExistsException.of(ENTITY_NAME, "name", requestDto.name());
         }
 
         CategoryEntity newCategory = this.mapper.toEntity(requestDto);

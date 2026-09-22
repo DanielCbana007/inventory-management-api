@@ -173,9 +173,6 @@ class ProductServiceTest {
         }
     }
 
-    // El updatedAt viejo del PUT (revision 5, 1.2) no se puede cazar aqui: lo escribe
-    // Hibernate en el flush, y en un test unitario no hay Hibernate. Necesita un test de
-    // integracion contra una base real.
     @Nested
     @DisplayName("updateProduct")
     class UpdateProduct {
@@ -224,6 +221,7 @@ class ProductServiceTest {
             ProductDto result = service.updateProduct(request(1L), 10L);
 
             // Assert
+            verify(productRepository).flush();
             assertEquals("Keyboard K380", result.name());
             assertEquals(new BigDecimal("39.90"), result.price());
             assertEquals(120, result.stock());

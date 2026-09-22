@@ -34,6 +34,8 @@ public class ProductEntity {
     @Column(unique = true, nullable = false, length = 50)
     private String sku;
 
+    // OK [§4]: precision/scale, 12 digitos y 2 decimales. Sin esto Postgres crea un numeric
+    //     sin limites y el redondeo deja de estar bajo control. Dinero nunca en double.
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
@@ -48,6 +50,9 @@ public class ProductEntity {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    // OK [§4]: LAZY explicito. @ManyToOne es EAGER por defecto, y eso trae la categoria en
+    //     cada consulta la necesites o no. Ojo: LAZY es correcto y aun asi hay N+1 en el
+    //     listado (ver [§3.1]); saber que son dos cosas distintas es nivel Domina.
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     private CategoryEntity category;
@@ -101,6 +106,12 @@ public class ProductEntity {
         return category;
     }
 
+    // MEJORA [§3.3]: el sku no entra aqui a proposito -es el identificador comercial y no
+    //         cambia-, pero ProductRequestDto lo exige con @NotBlank. El cliente esta
+    //         obligado a mandar un dato que el servidor descarta en silencio. Verificado:
+    //         mande "sku":"SKU-CAMBIADO" en un PUT y la respuesta siguio diciendo AUD-0005.
+    //         Salidas: un DTO de actualizacion sin sku, o 409 si el enviado no coincide con
+    //         el guardado. Elige una y documenta el porque.
     public void updateWith(String name, String description, BigDecimal price,
                            int stock, CategoryEntity category) {
         this.name = name;
@@ -110,6 +121,10 @@ public class ProductEntity {
         this.category = category;
     }
 
+    // OK [§4]: equals/hashCode por id, con guarda de null y hashCode constante. Es la forma
+    //     correcta con ids generados: antes de persistir el id es null y dos entidades nuevas
+    //     no deben ser iguales; el hashCode constante evita que la entidad se pierda dentro
+    //     de un HashSet cuando Hibernate le asigna el id.
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;

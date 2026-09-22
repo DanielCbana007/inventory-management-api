@@ -16,6 +16,9 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import java.util.List;
 
+// OK [§4]: extender ResponseEntityExceptionHandler en vez de capturar Exception es lo que
+//     hace que 405 y 415 salgan ya en application/problem+json sin escribir un handler para
+//     ellos. Verificado en la auditoria 5: los 12 casos de la matriz devuelven ProblemDetail.
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 

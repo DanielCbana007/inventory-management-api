@@ -32,18 +32,25 @@ public class CategoryService {
         //     desde la restriccion unique de Postgres. Esa restriccion NO sobra: es la
         //     garantia real para la condicion de carrera entre este if y el save().
         if (categoryRepository.existsByName(requestDto.name())){
-            throw CusEntityAlreadyExistsException.of(ENTITY_NAME, requestDto.name());
+            throw CusEntityAlreadyExistsException.of(ENTITY_NAME, "name", requestDto.name());
         }
 
         CategoryEntity newCategory = this.mapper.toEntity(requestDto);
         return  this.mapper.toDto(this.categoryRepository.save(newCategory));
     }
 
-    // MEJORA [§2.4]: findAll() sin Pageable trae la tabla entera. Ver la nota del controller.
+    // MEJORA [§2.3]: findAll() sin Pageable trae la tabla entera. Ver la nota del controller.
     @Transactional(readOnly = true)
     public List<CategoryDto> getAllCategories() {
         List<CategoryEntity> listCategories = this.categoryRepository.findAll();
         return this.mapper.toDtoAll(listCategories);
+    }
+
+    @Transactional(readOnly = true)
+    public CategoryDto getCategoryById(Long id) {
+        CategoryEntity category = this.categoryRepository.findById(id)
+                .orElseThrow(() -> CusEntityNotFoundException.of(ENTITY_NAME, id));
+        return this.mapper.toDto(category);
     }
 
     @Transactional

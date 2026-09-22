@@ -5,9 +5,9 @@ public class CusEntityAlreadyExistsException extends RuntimeException {
         super(message);
     }
 
-    public static CusEntityAlreadyExistsException of(String entityName, Object value) {
+    public static CusEntityAlreadyExistsException of(String entityName, String field, Object value) {
         return new CusEntityAlreadyExistsException(
-                "%s with name '%s' already exists".formatted(entityName, value)
+                "%s with %s '%s' already exists".formatted(entityName, field, value)
         );
     }
 }

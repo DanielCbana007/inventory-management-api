@@ -2,7 +2,7 @@ package inventory.management.api.product.controller;
 
 import inventory.management.api.product.dto.ProductDto;
 import inventory.management.api.product.dto.ProductRequestDto;
-import inventory.management.api.product.service.ProdurctService;
+import inventory.management.api.product.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -38,9 +38,9 @@ public class ProductController {
 
     private static final String PROBLEM_JSON = "application/problem+json";
 
-    private final ProdurctService service;
+    private final ProductService service;
 
-    public ProductController(ProdurctService service) {
+    public ProductController(ProductService service) {
         this.service = service;
     }
 
@@ -126,7 +126,7 @@ public class ProductController {
             }
     )
     // FALTA [§2.1]: este controller no tiene ni un test. Hace falta un
-    //        @WebMvcTest(ProductController.class) con @MockitoBean ProdurctService y los 10
+    //        @WebMvcTest(ProductController.class) con @MockitoBean ProductService y los 10
     //        casos de CategoryControllerTest, mas 405 (verbo no soportado) y 400 (JSON
     //        malformado), que alli tampoco estan.
     public ResponseEntity<ProductDto> update(

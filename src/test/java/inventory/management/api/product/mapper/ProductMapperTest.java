@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -54,39 +53,6 @@ class ProductMapperTest {
             assertEquals(120, result.stock());
             assertEquals(1L, result.category().id());
             assertEquals("ELECTRONICS", result.category().name());
-        }
-    }
-
-    @Nested
-    @DisplayName("toDtoAll")
-    class ToDtoAll {
-
-        @Test
-        @DisplayName("Should map every entity keeping the order.")
-        void shouldReturnListProductDto() {
-            // Arrange
-            List<ProductEntity> entities = List.of(
-                    new ProductEntity("Keyboard", "d", "SKU-1", new BigDecimal("10.00"), 5, electronics),
-                    new ProductEntity("Mouse", "d", "SKU-2", new BigDecimal("20.00"), 8, electronics)
-            );
-
-            // Act
-            List<ProductDto> result = mapper.toDtoAll(entities);
-
-            // Assert
-            assertEquals(2, result.size());
-            assertEquals("SKU-1", result.get(0).sku());
-            assertEquals("SKU-2", result.get(1).sku());
-        }
-
-        @Test
-        @DisplayName("Should return an empty list when there are no entities.")
-        void shouldReturnEmptyList() {
-            // Act
-            List<ProductDto> result = mapper.toDtoAll(List.of());
-
-            // Assert
-            assertEquals(0, result.size());
         }
     }
 

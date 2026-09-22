@@ -35,7 +35,7 @@ public class OpenApiConfig {
                         .license(new License()
                                 .name("MIT License")
                                 .url("https://opensource.org/licenses/MIT")))
-                // MEJORA [§3.5]: solo hay un server y es localhost:8080. En cuanto se despliegue,
+                // MEJORA [§3.4]: solo hay un server y es localhost:8080. En cuanto se despliegue,
                 //         la Swagger UI publicada mandara las peticiones a la maquina del que
                 //         la abra.
                 .servers(List.of(

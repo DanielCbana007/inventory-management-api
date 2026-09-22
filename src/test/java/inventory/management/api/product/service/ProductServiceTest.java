@@ -4,6 +4,7 @@ import inventory.management.api.category.entity.CategoryEntity;
 import inventory.management.api.category.mapper.CategoryMapper;
 import inventory.management.api.category.repository.CategoryRepository;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
+import inventory.management.api.exception.CusEntityConflictException;
 import inventory.management.api.exception.CusEntityNotFoundException;
 import inventory.management.api.product.dto.ProductDto;
 import inventory.management.api.product.dto.ProductRequestDto;
@@ -17,6 +18,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -122,22 +127,26 @@ class ProductServiceTest {
     }
 
     @Test
-    @DisplayName("Should return all products with their category.")
+    @DisplayName("Should return the requested page with each category, keeping the total.")
     void getAllProducts() {
         // Arrange
-        when(productRepository.findAll()).thenReturn(List.of(
+        Pageable pageable = PageRequest.of(0, 2);
+        List<ProductEntity> entities = List.of(
                 new ProductEntity("Keyboard", "d", "SKU-1", new BigDecimal("10.00"), 5, electronics),
                 new ProductEntity("T-shirt", "d", "SKU-2", new BigDecimal("20.00"), 8, clothing)
-        ));
+        );
+
+        when(productRepository.findAll(pageable)).thenReturn(new PageImpl<>(entities, pageable, 7));
 
         // Act
-        List<ProductDto> result = service.getAllProducts();
+        Page<ProductDto> result = service.getAllProducts(pageable);
 
         // Assert
-        assertEquals(2, result.size());
-        assertEquals("SKU-1", result.get(0).sku());
-        assertEquals("ELECTRONICS", result.get(0).category().name());
-        assertEquals("CLOTHING", result.get(1).category().name());
+        assertEquals(2, result.getContent().size());
+        assertEquals("SKU-1", result.getContent().get(0).sku());
+        assertEquals("ELECTRONICS", result.getContent().get(0).category().name());
+        assertEquals("CLOTHING", result.getContent().get(1).category().name());
+        assertEquals(7, result.getTotalElements());
     }
 
     @Nested
@@ -189,6 +198,26 @@ class ProductServiceTest {
             assertThrows(CusEntityNotFoundException.class,
                     () -> service.updateProduct(request(1L), 99L));
 
+            verify(categoryRepository, never()).findById(any());
+        }
+
+        @Test
+        @DisplayName("Should throw CusEntityConflictException and change nothing when the sku differs.")
+        void updateProductSkuChanged() {
+            // Arrange
+            ProductEntity product = new ProductEntity("Old", "old", "LOG-K380",
+                    new BigDecimal("1.00"), 1, electronics);
+            ProductRequestDto changedSku = new ProductRequestDto("Keyboard K380", "Bluetooth keyboard",
+                    "OTHER-SKU", new BigDecimal("39.90"), 120, 1L);
+
+            when(productRepository.findById(10L)).thenReturn(Optional.of(product));
+
+            // Act & Assert
+            CusEntityConflictException ex = assertThrows(CusEntityConflictException.class,
+                    () -> service.updateProduct(changedSku, 10L));
+
+            assertTrue(ex.getMessage().contains("sku"));
+            assertEquals("Old", product.getName());
             verify(categoryRepository, never()).findById(any());
         }
 

@@ -110,6 +110,23 @@ class CategoryControllerTest {
         }
 
         @Test
+        @DisplayName("POST should return 400 when the description is longer than its column")
+        void createReturn400DescriptionTooLong() throws Exception {
+            // Arrange
+            CategoryRequestDto tooLong = new CategoryRequestDto("ACTION", "x".repeat(501));
+
+            // Act & Assert
+            mockMvc.perform(post(PATH + "/categories")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(tooLong)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errors[0].field").value("description"))
+                    .andExpect(jsonPath("$.errors[0].code").value("Size"));
+
+            verify(service, never()).createCategory(any());
+        }
+
+        @Test
         @DisplayName("POST should return 400 when the JSON is malformed")
         void createReturn400MalformedJson() throws Exception {
             // Act & Assert

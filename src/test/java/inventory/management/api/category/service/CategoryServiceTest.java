@@ -6,6 +6,7 @@ import inventory.management.api.category.entity.CategoryEntity;
 import inventory.management.api.category.mapper.CategoryMapper;
 import inventory.management.api.category.repository.CategoryRepository;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
+import inventory.management.api.exception.CusEntityConflictException;
 import inventory.management.api.exception.CusEntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -201,6 +202,22 @@ class CategoryServiceTest {
             // Act & Assert
             assertThrows(CusEntityNotFoundException.class,
                     () -> service.deleteCategory(99L));
+
+            verify(repository, never()).delete(any(CategoryEntity.class));
+        }
+
+        @Test
+        @DisplayName("Should throw CusEntityConflictException and delete nothing when it has products.")
+        void deleteCategoryWithProducts() {
+            // Arrange
+            CategoryEntity entity = new CategoryEntity("ACTION", "Action.");
+
+            when(repository.findById(1L)).thenReturn(Optional.of(entity));
+            when(repository.existsByIdAndProductsIsNotEmpty(1L)).thenReturn(true);
+
+            // Act & Assert
+            assertThrows(CusEntityConflictException.class,
+                    () -> service.deleteCategory(1L));
 
             verify(repository, never()).delete(any(CategoryEntity.class));
         }

@@ -4,6 +4,7 @@ import inventory.management.api.category.dto.CategoryDto;
 import inventory.management.api.category.dto.CategoryRequestDto;
 import inventory.management.api.category.service.CategoryService;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
+import inventory.management.api.exception.CusEntityConflictException;
 import inventory.management.api.exception.CusEntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -273,6 +274,20 @@ class CategoryControllerTest {
                     .andExpect(status().isNotFound())
                     .andExpect(content().contentType("application/problem+json"))
                     .andExpect(jsonPath("$.detail").value(containsString("99")));
+        }
+
+        @Test
+        @DisplayName("DELETE should return 409 when the category still has products")
+        void deleteReturn409() throws Exception {
+            // Arrange
+            doThrow(CusEntityConflictException.hasDependents("Category", 1L, "products"))
+                    .when(service).deleteCategory(1L);
+
+            // Act & Assert
+            mockMvc.perform(delete(PATH + "/categories/1"))
+                    .andExpect(status().isConflict())
+                    .andExpect(content().contentType("application/problem+json"))
+                    .andExpect(jsonPath("$.detail").value(containsString("products")));
         }
 
         @Test

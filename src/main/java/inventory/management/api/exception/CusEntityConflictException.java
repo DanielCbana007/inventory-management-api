@@ -12,4 +12,10 @@ public class CusEntityConflictException extends RuntimeException {
                         .formatted(entityName, field, stored, received)
         );
     }
+
+    public static CusEntityConflictException hasDependents(String entityName, Object id, String dependents) {
+        return new CusEntityConflictException(
+                "%s with id '%s' still has %s".formatted(entityName, id, dependents)
+        );
+    }
 }

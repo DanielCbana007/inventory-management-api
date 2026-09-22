@@ -66,6 +66,8 @@ public class ProductService {
     public ProductDto updateProduct(ProductRequestDto requestDto, Long id){
         ProductEntity product = this.productRepository.findById(id)
                 .orElseThrow(() -> CusEntityNotFoundException.of("Product", id));
+        // OK [§4]: 409 si el sku cambia, en vez de ignorarlo en silencio. El detail dice el
+        //     guardado y el recibido, asi el cliente sabe exactamente que corregir.
         if (!product.getSku().equals(requestDto.sku())) {
             throw CusEntityConflictException.immutableField("Product", "sku", product.getSku(), requestDto.sku());
         }
@@ -86,9 +88,9 @@ public class ProductService {
     }
 
     // Delete
-    // OK [§4]: las tres escrituras con @Transactional y la lectura con readOnly = true, y
-    //     updateProduct se apoya en el dirty checking sin llamar a save(). Saber que ese save
-    //     sobra dentro de una transaccion es lo que separa Habilita de Explora en este eje.
+    // OK [§4]: escrituras con @Transactional y lecturas con readOnly = true. updateProduct no
+    //     llama a save() (dirty checking) pero si a flush(): @UpdateTimestamp se escribe en el
+    //     flush, y sin el la respuesta llevaria el updatedAt viejo. El verify(flush) lo protege.
     @Transactional
     public void deleteProduct(Long id){
         ProductEntity product = this.productRepository.findById(id)

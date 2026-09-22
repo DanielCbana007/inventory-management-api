@@ -33,7 +33,7 @@ import java.net.URI;
 
 /**
  * Leyenda de las marcas de auditoria: ver la cabecera de CategoryController.
- * Apuntan a docs/seguimiento/auditoria-5.md y el sufijo [§x] es su seccion.
+ * Apuntan a docs/seguimiento/auditoria-6.md y el sufijo [§x] es su seccion.
  */
 @RestController
 @RequestMapping("/api/v1/products")

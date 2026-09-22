@@ -53,6 +53,9 @@ public class CategoryService {
         return this.mapper.toDto(category);
     }
 
+    // MEJORA [§3.1]: no comprueba si el nombre nuevo ya es de otra categoria. El 409 llega igual,
+    //         pero lo pone la restriccion unique al hacer commit, con un mensaje generico; el POST
+    //         dice "Category with name 'X' already exists". existsByNameAndIdNot los iguala.
     @Transactional
     public CategoryDto updateCategory(CategoryRequestDto requestDto, Long id) {
         CategoryEntity category = this.categoryRepository.findById(id)

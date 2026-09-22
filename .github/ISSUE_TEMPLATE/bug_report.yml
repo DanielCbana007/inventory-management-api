@@ -1,0 +1,33 @@
+name: Bug report
+description: The API does not behave as the contract says
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: request
+    attributes:
+      label: Request
+      description: The method, path and body you sent. A curl command is ideal.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected response
+      description: The status code and body you expected, and why (the OpenAPI contract, an RFC…).
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual response
+      description: The status code and body you got.
+      render: json
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The tag or commit you ran, for example v1.0.0.

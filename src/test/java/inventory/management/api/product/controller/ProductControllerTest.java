@@ -6,15 +6,12 @@ import inventory.management.api.exception.CusEntityConflictException;
 import inventory.management.api.exception.CusEntityNotFoundException;
 import inventory.management.api.product.dto.ProductDto;
 import inventory.management.api.product.dto.ProductRequestDto;
-import inventory.management.api.product.entity.ProductEntity;
 import inventory.management.api.product.service.ProductService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.data.core.PropertyReferenceException;
-import org.springframework.data.core.TypeInformation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -229,17 +226,15 @@ class ProductControllerTest {
         }
 
         @Test
-        @DisplayName("GET should return 400 when sort names an unknown property")
-        void getAllUnknownSort400() throws Exception {
-            // Arrange
-            when(service.getAllProducts(any(Pageable.class))).thenThrow(
-                    new PropertyReferenceException("precio", TypeInformation.of(ProductEntity.class), List.of()));
-
+        @DisplayName("GET should return 400 when sort is not a sortable field")
+        void getAllUnsortableField400() throws Exception {
             // Act & Assert
             mockMvc.perform(get(PATH + "?sort=precio"))
                     .andExpect(status().isBadRequest())
                     .andExpect(content().contentType(PROBLEM_JSON))
                     .andExpect(jsonPath("$.detail").value(containsString("precio")));
+
+            verify(service, never()).getAllProducts(any());
         }
 
         @Test

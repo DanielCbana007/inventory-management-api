@@ -44,8 +44,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     // ---------- paginacion ----------
 
-    // Un sort sobre un campo que no existe (?sort=precio) llegaba al catch-all como 500.
-    // Es un error del cliente. El detail no nombra la entidad para no exponer el modelo interno.
+    @ExceptionHandler(CusInvalidSortException.class)
+    public ProblemDetail handleInvalidSort(CusInvalidSortException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    // Red de seguridad por si la lista blanca de un controller nombra un campo que no existe en
+    // la entidad: sin esto, la PropertyReferenceException llegaria al catch-all como 500.
     @ExceptionHandler(PropertyReferenceException.class)
     public ProblemDetail handleUnknownSortProperty(PropertyReferenceException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,

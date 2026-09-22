@@ -3,6 +3,7 @@ package inventory.management.api.category.controller;
 import inventory.management.api.category.dto.CategoryDto;
 import inventory.management.api.category.dto.CategoryRequestDto;
 import inventory.management.api.category.service.CategoryService;
+import inventory.management.api.common.SortableFields;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -40,6 +41,8 @@ import java.net.URI;
 @RequestMapping("/api/v1/categories")
 @Tag(name = "Categories", description = "Create, read, replace and delete inventory categories")
 public class CategoryController {
+    private static final SortableFields SORTABLE = SortableFields.of("id", "name");
+
     private final CategoryService categoryService;
 
     public CategoryController(CategoryService categoryService) {
@@ -82,10 +85,11 @@ public class CategoryController {
     @Operation(
             summary = "Get categories, paginated",
             description = "Returns one page of categories. page is zero-based, size defaults to 20 and "
-                    + "is capped at 100, and the order is by id unless sort is given (e.g. sort=name,desc).",
+                    + "is capped at 100, and the order is by id unless sort is given (e.g. sort=name,desc). "
+                    + "Sortable fields: id, name.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "One page of categories"),
-                    @ApiResponse(responseCode = "400", description = "sort names a property that does not exist",
+                    @ApiResponse(responseCode = "400", description = "sort names a field that is not sortable",
                             content = @Content(mediaType = "application/problem+json",
                                     schema = @Schema(implementation = ProblemDetail.class)))
             }
@@ -94,7 +98,7 @@ public class CategoryController {
     // podria salir en dos paginas o en ninguna.
     public PagedModel<CategoryDto> getAll(
             @ParameterObject @PageableDefault(size = 20, sort = "id") Pageable pageable) {
-        return new PagedModel<>(this.categoryService.getAllCategories(pageable));
+        return new PagedModel<>(this.categoryService.getAllCategories(SORTABLE.check(pageable)));
     }
 
     @GetMapping("/{id}")

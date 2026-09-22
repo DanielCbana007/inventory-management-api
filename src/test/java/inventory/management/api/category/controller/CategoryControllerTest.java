@@ -2,7 +2,6 @@ package inventory.management.api.category.controller;
 
 import inventory.management.api.category.dto.CategoryDto;
 import inventory.management.api.category.dto.CategoryRequestDto;
-import inventory.management.api.category.entity.CategoryEntity;
 import inventory.management.api.category.service.CategoryService;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
 import inventory.management.api.exception.CusEntityConflictException;
@@ -12,8 +11,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.data.core.PropertyReferenceException;
-import org.springframework.data.core.TypeInformation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -194,17 +191,15 @@ class CategoryControllerTest {
         }
 
         @Test
-        @DisplayName("GET should return 400 when sort names an unknown property")
-        void getAllUnknownSort400() throws Exception {
-            // Arrange
-            when(service.getAllCategories(any(Pageable.class))).thenThrow(
-                    new PropertyReferenceException("nombre", TypeInformation.of(CategoryEntity.class), List.of()));
-
+        @DisplayName("GET should return 400 when sort is not a sortable field, like the products collection")
+        void getAllUnsortableField400() throws Exception {
             // Act & Assert
-            mockMvc.perform(get(PATH + "/categories?sort=nombre"))
+            mockMvc.perform(get(PATH + "/categories?sort=products"))
                     .andExpect(status().isBadRequest())
                     .andExpect(content().contentType("application/problem+json"))
-                    .andExpect(jsonPath("$.detail").value(containsString("nombre")));
+                    .andExpect(jsonPath("$.detail").value(containsString("products")));
+
+            verify(service, never()).getAllCategories(any());
         }
 
         @Test

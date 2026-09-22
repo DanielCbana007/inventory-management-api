@@ -181,6 +181,49 @@ class ProductControllerTest {
     }
 
     @Nested
+    @DisplayName("getById")
+    class GetById {
+
+        @Test
+        @DisplayName("GET /{id} should return 200 with the product and its category")
+        void getByIdReturn200() throws Exception {
+            // Arrange
+            when(service.getProductById(10L)).thenReturn(response(10L, "LOG-K380"));
+
+            // Act & Assert
+            mockMvc.perform(get(PATH + "/10"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.id").value(10))
+                    .andExpect(jsonPath("$.category.name").value("ELECTRONICS"));
+        }
+
+        @Test
+        @DisplayName("GET /{id} should return 404 when the product does not exist")
+        void getByIdReturn404() throws Exception {
+            // Arrange
+            when(service.getProductById(99L)).thenThrow(CusEntityNotFoundException.of("Product", 99L));
+
+            // Act & Assert
+            mockMvc.perform(get(PATH + "/99"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(content().contentType(PROBLEM_JSON))
+                    .andExpect(jsonPath("$.detail").value(containsString("99")));
+        }
+
+        @Test
+        @DisplayName("GET /{id} should return 400 when the id is not a valid number")
+        void getByIdReturn400() throws Exception {
+            // Act & Assert
+            mockMvc.perform(get(PATH + "/abc"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentType(PROBLEM_JSON));
+
+            verify(service, never()).getProductById(any());
+        }
+    }
+
+    @Nested
     @DisplayName("update")
     class Update {
 

@@ -138,6 +138,41 @@ class ProductServiceTest {
         assertEquals("CLOTHING", result.get(1).category().name());
     }
 
+    @Nested
+    @DisplayName("getProductById")
+    class GetProductById {
+
+        @Test
+        @DisplayName("Should return the DTO of the product found, with its category.")
+        void getProductByIdOk() {
+            // Arrange
+            ProductEntity product = new ProductEntity("Keyboard", "d", "LOG-K380",
+                    new BigDecimal("39.90"), 120, electronics);
+            ReflectionTestUtils.setField(product, "id", 10L);
+
+            when(productRepository.findById(10L)).thenReturn(Optional.of(product));
+
+            // Act
+            ProductDto result = service.getProductById(10L);
+
+            // Assert
+            assertEquals(10L, result.id());
+            assertEquals("LOG-K380", result.sku());
+            assertEquals("ELECTRONICS", result.category().name());
+        }
+
+        @Test
+        @DisplayName("Should throw CusEntityNotFoundException when the id does not exist.")
+        void getProductByIdNotFound() {
+            // Arrange
+            when(productRepository.findById(99L)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThrows(CusEntityNotFoundException.class,
+                    () -> service.getProductById(99L));
+        }
+    }
+
     // El updatedAt viejo del PUT (revision 5, 1.2) no se puede cazar aqui: lo escribe
     // Hibernate en el flush, y en un test unitario no hay Hibernate. Necesita un test de
     // integracion contra una base real.

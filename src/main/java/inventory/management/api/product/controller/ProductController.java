@@ -73,12 +73,6 @@ public class ProductController {
             @RequestBody @Valid ProductRequestDto requestDto) {
         ProductDto created = this.service.createProduct(requestDto);
 
-        // ERROR [§1.1]: esta Location apunta a una URL que responde 405, porque abajo no hay
-        //        ningun GET /{id}. Verificado en la revision 5:
-        //            POST /api/v1/products      -> 201  Location: .../products/112
-        //            GET  /api/v1/products/112  -> 405  "Method 'GET' is not supported."
-        //        La API dice donde vive el recurso creado y ese destino no se puede leer.
-        //        Resuelto cuando: seguir la Location de un POST recien hecho devuelve 200.
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(created.id())
@@ -103,9 +97,29 @@ public class ProductController {
         return this.service.getAllProducts();
     }
 
-    // FALTA [§2.2]: no existe GET /{id}. Sin el faltan los 4 verbos del recurso de item y la
-    //        Location del POST es una promesa incumplida. 200 con el recurso, 404 con
-    //        ProblemDetail.
+    @GetMapping("/{id}")
+    @Operation(
+            summary = "Get product by ID",
+            description = "Returns a single product with its category. This is the URL the Location "
+                    + "header of a POST points to.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Product found",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ProductDto.class))),
+                    @ApiResponse(responseCode = "400", description = "The id is not a valid number",
+                            content = @Content(mediaType = PROBLEM_JSON,
+                                    schema = @Schema(implementation = ProblemDetail.class))),
+                    @ApiResponse(responseCode = "404", description = "No product exists with that id",
+                            content = @Content(mediaType = PROBLEM_JSON,
+                                    schema = @Schema(implementation = ProblemDetail.class)))
+            }
+    )
+    public ProductDto getById(
+            @Parameter(name = "id", description = "Id of the product to get",
+                    example = "3", required = true)
+            @PathVariable Long id) {
+        return this.service.getProductById(id);
+    }
 
     @PutMapping("/{id}")
     @Operation(

@@ -22,11 +22,10 @@ public record ProductRequestDto(
         @NotBlank @Size(min = 1, max = 500)
         String description,
 
-        @Schema(description = "Stock keeping unit. Must be unique across the catalogue.",
+        @Schema(description = "Stock keeping unit. Must be unique across the catalogue. "
+                + "It cannot be changed: a PUT with a different sku is rejected with 409.",
                 example = "LOG-K380-ES")
         @NotBlank @Size(min = 1, max = 50)
-        // MEJORA [§3.3]: obligatorio aqui, ignorado por updateWith en el PUT. Ver la nota de
-        //         ProductEntity.updateWith.
         String sku,
 
         @Schema(description = "Unit price in the catalogue currency. Cannot be negative.",

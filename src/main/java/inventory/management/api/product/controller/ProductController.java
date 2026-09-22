@@ -126,7 +126,7 @@ public class ProductController {
             summary = "Update product by ID",
             description = "Replaces the product as a whole. This is a PUT, not a PATCH: fields you do not "
                     + "send are set to null, they do not keep their previous value. The sku cannot be "
-                    + "changed: it is the commercial identifier and stays with the product for its lifetime.",
+                    + "changed: send the current one, or the request is rejected with 409.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Product updated",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -136,12 +136,15 @@ public class ProductController {
                                     schema = @Schema(implementation = ProblemDetail.class))),
                     @ApiResponse(responseCode = "404", description = "No product exists with that id, or no category exists with the given categoryId",
                             content = @Content(mediaType = PROBLEM_JSON,
+                                    schema = @Schema(implementation = ProblemDetail.class))),
+                    @ApiResponse(responseCode = "409", description = "The sku sent differs from the stored one: it cannot be changed",
+                            content = @Content(mediaType = PROBLEM_JSON,
                                     schema = @Schema(implementation = ProblemDetail.class)))
             }
     )
     public ResponseEntity<ProductDto> update(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "New state of the product. The sku is ignored: it cannot be changed.")
+                    description = "New state of the product. The sku must match the stored one.")
             @RequestBody @Valid ProductRequestDto requestDto,
             @Parameter(name = "id", description = "Id of the product to replace",
                     example = "3", required = true)

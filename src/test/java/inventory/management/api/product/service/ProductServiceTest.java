@@ -4,6 +4,7 @@ import inventory.management.api.category.entity.CategoryEntity;
 import inventory.management.api.category.mapper.CategoryMapper;
 import inventory.management.api.category.repository.CategoryRepository;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
+import inventory.management.api.exception.CusEntityConflictException;
 import inventory.management.api.exception.CusEntityNotFoundException;
 import inventory.management.api.product.dto.ProductDto;
 import inventory.management.api.product.dto.ProductRequestDto;
@@ -189,6 +190,26 @@ class ProductServiceTest {
             assertThrows(CusEntityNotFoundException.class,
                     () -> service.updateProduct(request(1L), 99L));
 
+            verify(categoryRepository, never()).findById(any());
+        }
+
+        @Test
+        @DisplayName("Should throw CusEntityConflictException and change nothing when the sku differs.")
+        void updateProductSkuChanged() {
+            // Arrange
+            ProductEntity product = new ProductEntity("Old", "old", "LOG-K380",
+                    new BigDecimal("1.00"), 1, electronics);
+            ProductRequestDto changedSku = new ProductRequestDto("Keyboard K380", "Bluetooth keyboard",
+                    "OTHER-SKU", new BigDecimal("39.90"), 120, 1L);
+
+            when(productRepository.findById(10L)).thenReturn(Optional.of(product));
+
+            // Act & Assert
+            CusEntityConflictException ex = assertThrows(CusEntityConflictException.class,
+                    () -> service.updateProduct(changedSku, 10L));
+
+            assertTrue(ex.getMessage().contains("sku"));
+            assertEquals("Old", product.getName());
             verify(categoryRepository, never()).findById(any());
         }
 

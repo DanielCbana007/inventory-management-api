@@ -106,12 +106,8 @@ public class ProductEntity {
         return category;
     }
 
-    // MEJORA [§3.3]: el sku no entra aqui a proposito -es el identificador comercial y no
-    //         cambia-, pero ProductRequestDto lo exige con @NotBlank. El cliente esta
-    //         obligado a mandar un dato que el servidor descarta en silencio. Verificado:
-    //         mande "sku":"SKU-CAMBIADO" en un PUT y la respuesta siguio diciendo AUD-0005.
-    //         Salidas: un DTO de actualizacion sin sku, o 409 si el enviado no coincide con
-    //         el guardado. Elige una y documenta el porque.
+    // El sku no entra: es el identificador comercial y no cambia. ProductService rechaza
+    // con 409 un PUT que intente cambiarlo, en vez de ignorarlo en silencio.
     public void updateWith(String name, String description, BigDecimal price,
                            int stock, CategoryEntity category) {
         this.name = name;

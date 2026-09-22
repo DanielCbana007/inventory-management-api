@@ -2,6 +2,7 @@ package inventory.management.api.product.controller;
 
 import inventory.management.api.category.dto.CategoryDto;
 import inventory.management.api.exception.CusEntityAlreadyExistsException;
+import inventory.management.api.exception.CusEntityConflictException;
 import inventory.management.api.exception.CusEntityNotFoundException;
 import inventory.management.api.product.dto.ProductDto;
 import inventory.management.api.product.dto.ProductRequestDto;
@@ -257,6 +258,22 @@ class ProductControllerTest {
                     .andExpect(status().isNotFound())
                     .andExpect(content().contentType(PROBLEM_JSON))
                     .andExpect(jsonPath("$.detail").value(containsString("99")));
+        }
+
+        @Test
+        @DisplayName("PUT should return 409 when the sku differs from the stored one")
+        void updateReturn409() throws Exception {
+            // Arrange
+            when(service.updateProduct(any(ProductRequestDto.class), eq(10L)))
+                    .thenThrow(CusEntityConflictException.immutableField("Product", "sku", "OLD", "LOG-K380"));
+
+            // Act & Assert
+            mockMvc.perform(put(PATH + "/10")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isConflict())
+                    .andExpect(content().contentType(PROBLEM_JSON))
+                    .andExpect(jsonPath("$.detail").value(containsString("sku")));
         }
 
         @Test

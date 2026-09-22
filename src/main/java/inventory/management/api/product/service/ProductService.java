@@ -14,11 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// FALTA [§2.1]: cero tests. Es el servicio MAS complejo del proyecto -dos repositorios, una
-//        relacion y dos motivos distintos de 404- y el unico sin cobertura. CLAUDE.md exige
-//        cobertura al menos en la capa de servicio. Los siete casos estan en la auditoria.
-//        Usa el mapper REAL, como en CategoryServiceTest: con el mapper mockeado, el caso
-//        "actualizar devuelve los valores nuevos" no puede fallar nunca.
 @Service
 public class ProductService {
     private final ProductRepository productRepository;

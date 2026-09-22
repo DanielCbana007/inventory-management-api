@@ -50,6 +50,17 @@ The full contract is in Swagger UI at `http://localhost:8080/swagger-ui.html` (`
 ./gradlew test
 ```
 
+## Contributing
+
+Feedback, bug reports and ports to other languages are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+The API contract is published in [`docs/openapi/v1.0.0.json`](docs/openapi/v1.0.0.json), so you can
+build the same project with another stack without running this one.
+
+### Ports
+
+None yet. Build one and it will be listed here.
+
 ## Versions
 
 See [CHANGELOG.md](CHANGELOG.md). Released under the [MIT License](LICENSE).

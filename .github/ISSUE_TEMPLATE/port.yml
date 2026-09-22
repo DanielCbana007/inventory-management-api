@@ -1,0 +1,33 @@
+name: Port to another language
+description: You are building this same API with another stack
+title: "[Port]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Great! The contract to implement is `docs/openapi/v1.0.0.json`. I will link your
+        repository from the README.
+  - type: input
+    id: stack
+    attributes:
+      label: Language and framework
+      placeholder: TypeScript + NestJS
+    validations:
+      required: true
+  - type: input
+    id: repo
+    attributes:
+      label: Repository
+      placeholder: https://github.com/you/inventory-management-api-nest
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version of the contract you implement
+      placeholder: v1.0.0
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything worth comparing?
+      description: Optional. Decisions that differ from this repo, or something your stack made easier or harder.

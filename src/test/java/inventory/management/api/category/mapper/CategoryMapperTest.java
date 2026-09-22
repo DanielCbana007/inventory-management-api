@@ -31,14 +31,9 @@ class CategoryMapperTest {
             CategoryDto result = mapper.toDto(entity);
 
             // Assert
-            // ERROR [§1.5]: estos dos assert afirman sobre entity, que es la ENTRADA que el
-            //        propio test construyo dos lineas antes. Se cumplen siempre, haga lo que
-            //        haga toDto. Demostrado por mutacion en la revision 4: al devolver nulos
-            //        desde toDto, solo fallo toDtoAll. Deben ser result.name() y
-            //        result.description().
             assertNotNull(result);
-            assertEquals("ACTION", entity.getName());
-            assertEquals("Action", entity.getDescription());
+            assertEquals("ACTION", result.name());
+            assertEquals("Action", result.description());
         }
 
     }

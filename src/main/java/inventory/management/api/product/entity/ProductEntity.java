@@ -51,8 +51,8 @@ public class ProductEntity {
     private LocalDateTime updatedAt;
 
     // OK [§4]: LAZY explicito. @ManyToOne es EAGER por defecto, y eso trae la categoria en
-    //     cada consulta la necesites o no. Ojo: LAZY es correcto y aun asi hay N+1 en el
-    //     listado (ver [§3.1]); saber que son dos cosas distintas es nivel Experto.
+    //     cada consulta la necesites o no. El listado, que si la usa, la pide en la misma
+    //     consulta con @EntityGraph en ProductRepository.
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     private CategoryEntity category;

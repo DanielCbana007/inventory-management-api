@@ -1,10 +1,8 @@
 package inventory.management.api;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class ApiApplicationTests {
+class ApiApplicationTests extends IntegrationTestBase {
 
 	@Test
 	void contextLoads() {

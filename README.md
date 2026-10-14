@@ -46,9 +46,15 @@ The full contract is in Swagger UI at `http://localhost:8080/swagger-ui.html` (`
 
 ## Tests
 
-```bash
-./gradlew test
-```
+The integration tests start their own PostgreSQL in a container with                                                                                                                                                              
+[Testcontainers](https://testcontainers.com), so they need a running Docker daemon                                                                                                                                                
+(Docker Desktop on Windows and macOS). They do not use the database from `.env`.
+
+  ```bash                                                                                                                                                                                                                           
+  ./gradlew test                                                                                                                                                                                                                    
+  ```                                                                                                                                                                                                                               
+
+The first run pulls the `postgres` image and takes a few minutes; later runs take seconds.
 
 ## Contributing
 

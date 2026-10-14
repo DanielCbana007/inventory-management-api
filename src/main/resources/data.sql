@@ -26,3 +26,11 @@ VALUES
     ((SELECT id FROM tbl_category WHERE name = 'Deportes'), 'SKU-0017', 'Mancuernas 5kg', 'Par de mancuernas', 130000.00, 15, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ((SELECT id FROM tbl_category WHERE name = 'Deportes'), 'SKU-0018', 'Colchoneta Yoga', 'Colchoneta para yoga', 60000.00, 50, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT ("sku") DO NOTHING;
+
+INSERT INTO users (email, password_hash, role, created_at)
+VALUES (
+           'admin@inventory.com',
+           '$2a$10$ivCdrKc2NEvmcBxo9dnhD.E.KmVrqKeN54IcWE6ajFHxmwvKSFMiq',
+           'ADMIN',
+           NOW()
+       ) ON CONFLICT (email) DO NOTHING;
